@@ -2218,9 +2218,9 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         )
 
         if (
-            settings.get("dashboard_enabled", False)
-            and layer.type() == QgsMapLayerType.VectorLayer
-            and settings.get("dashboard_category_field", "")
+            settings.get("dashboard_enabled", False) and
+            layer.type() == QgsMapLayerType.VectorLayer and
+            settings.get("dashboard_category_field", "")
         ):
             dashboard_images = build_dashboard_images(
                 layer_name=layer.name(),

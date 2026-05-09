@@ -155,9 +155,9 @@ class QPressPlugin:
             )
             return
         if (
-            settings.get("topo_profile", False)
-            and settings.get("topo_profile_source") == "project"
-            and not settings.get("topo_profile_raster_id")
+            settings.get("topo_profile", False) and
+            settings.get("topo_profile_source") == "project" and
+            not settings.get("topo_profile_raster_id")
         ):
             QMessageBox.warning(
                 self.iface.mainWindow(),

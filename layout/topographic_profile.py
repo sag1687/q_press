@@ -683,9 +683,9 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
     )
     source_text = (
         _text(language, "Tracciato profilo: linea indicata dall'utente o geometria lineare intercettata.",
-              "Profile trace: user indicated line or intersected line geometry.")
-        + "\n"
-        + _source_description(source_info, language)
+              "Profile trace: user indicated line or intersected line geometry.") +
+        "\n" +
+        _source_description(source_info, language)
     )
     _draw_fitted_text(
         painter,

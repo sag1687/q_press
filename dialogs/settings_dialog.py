@@ -1555,8 +1555,8 @@ class SettingsDialog(QDialog):
                                 info_rect.width() - 12, info_rect.height() * 0.25)
             scale_rect = QRectF(info_rect.left() + 7, title_rect.bottom() + 3,
                                 info_rect.width() - 14, max(info_rect.height() * 0.20, 16))
-            meta_rect = QRectF(info_rect.left() + 7, scale_rect.bottom() + 3, info_rect.width() -
-                               14, max(info_rect.bottom() - scale_rect.bottom() - 7, 8))
+            meta_rect = QRectF(info_rect.left() + 7, scale_rect.bottom() + 3,
+                               info_rect.width() - 14, max(info_rect.bottom() - scale_rect.bottom() - 7, 8))
             draw_text(title_preview, title_rect, self._title_font_for_preview(), True, Qt.AlignCenter)
             draw_scale_badge(scale_rect, scale_est)
             draw_text(meta, meta_rect, 7, False, Qt.AlignLeft | Qt.AlignTop, QColor("#1F2937"))

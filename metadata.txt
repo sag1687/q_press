@@ -3,13 +3,14 @@ name=Q-Press
 qgisMinimumVersion=3.16
 description=Professional cartographic PDF generator. Use Shift+Drag to select an area and export a comprehensive map with layout, filtered attributes, charts, and topographic profiles from OpenTopoData or local DEM.
 about=Q-Press allows you to select an area directly from the QGIS canvas using Shift+Drag and instantly generate a professional cartographic PDF. The output includes a technical title block, coherent scale, coordinate grids, legend, overview map, filtered attribute tables, statistical dashboards, and a single-line topographic profile from OpenTopoData or a project DTM/DEM raster.
-version=1.8.0
+version=1.8.1
 author=Dott. Sarino Alfonso Grande
 email=sino.grande@gmail.com
 tracker=https://github.com/qgis/QGIS/issues
 repository=https://github.com/qgis/QGIS
 homepage=https://sinocloud.it
-changelog=Version 1.8.0: Fixed security vulnerability in online elevation requests and cleaned up build artifacts.
+changelog=Version 1.8.1: Resolved security, PEP8 and hidden file warnings.
+Version 1.8.0: Fixed security vulnerability in online elevation requests and cleaned up build artifacts.
 category=Vector
 tags=pdf,layout,print,cartography,map,atlas,dashboard,charts,attributes,topography,elevation,profile,qgis
 icon=resources/qpress_icon.svg
