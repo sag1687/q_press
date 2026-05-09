@@ -1,0 +1,260 @@
+# Q-Press Changelog
+
+## Version 1.8.0 - 2026-05-09
+
+### Italiano
+
+- Avanzamento di versione per consolidamento delle funzionalità di sicurezza e stabilità del layout.
+- Ottimizzazione della gestione delle richieste online per i profili topografici.
+
+### English
+
+- Version advancement for security features consolidation and layout stability.
+- Optimized online request handling for topographic profiles.
+
+## Version 1.7.8 - 2026-05-09
+
+### Italiano
+
+- Risolta vulnerabilità di sicurezza (Audit: url open for permitted schemes) nel modulo dei profili topografici online: ora vengono accettati solo URL con schema `http` o `https`.
+- Pulizia dei file temporanei di build (`__pycache__`) dal pacchetto del plugin.
+
+### English
+
+- Fixed security vulnerability (Audit: url open for permitted schemes) in the online topographic profiles module: only `http` and `https` URL schemes are now accepted.
+- Cleaned up build artifacts (`__pycache__`) from the plugin package.
+
+## Version 1.7.7 - 2026-05-09
+
+### Italiano
+
+- Riprogettato il cartiglio principale come tavola tecnica a celle: titolo, scala applicata, dati tavola, inquadramento, attributi, dashboard e legenda hanno aree separate e non si sovrappongono.
+- Uniformato il comportamento del cartiglio laterale e inferiore con sezioni incorniciate, intestazioni coerenti e tabella metadati leggibile.
+- Corretta la persistenza dello stato `_attributes_in_titleblock` tra esportazioni successive.
+- La pagina attributi usa ora pagine A3 paginate da `QgsLayoutMultiFrame` invece di generare un foglio con altezza variabile e potenzialmente anomala.
+- Migliorati i dashboard: titoli, sottotitoli, etichette e valori usano fitting nel box e troncamento a parola intera.
+- Aggiunto controllo esplicito sulla geometria del layout prima della composizione, con errore chiaro se mappa e cartiglio non hanno spazio sufficiente.
+- L'export PDF crea la cartella di destinazione se necessario e verifica che il file finale sia stato realmente prodotto e non sia vuoto.
+
+### English
+
+- Rebuilt the main title block as a technical cell-based sheet: title, applied scale, sheet data, overview, attributes, dashboard and legend now have separate non-overlapping areas.
+- Unified right-side and bottom title block behavior with framed sections, consistent headings and readable metadata table.
+- Fixed persisted `_attributes_in_titleblock` state across consecutive exports.
+- Attribute pages now use A3 pages paginated by `QgsLayoutMultiFrame` instead of creating a variable-height page that could become abnormal.
+- Improved dashboards: titles, subtitles, labels and values now fit inside their boxes and truncate only at word boundaries.
+- Added an explicit layout geometry check before composition, with a clear error if map and title block do not have enough space.
+- PDF export now creates the destination folder when needed and verifies that the final file was actually produced and is not empty.
+
+## Version 1.7.6 - 2026-05-09
+
+### Italiano
+
+- Aggiunto indicatore grafico della scala applicata nel cartiglio, con icona tipo righello e valore reale `1:x` derivato dal layout.
+- Aggiunta intestazione numerica della scala anche sopra la barra di scala in mappa.
+- Allineata l'anteprima del dialogo al layout reale: il logo non occupa piu' spazio se non e' impostato e il badge scala compare anche in preview.
+- Rafforzato l'adattamento dei testi residui nel profilo topografico e nella sezione di inquadramento.
+
+### English
+
+- Added a graphical applied-scale indicator in the title block, with a ruler-like icon and real `1:x` value derived from the layout.
+- Added a numeric scale heading above the map scale bar.
+- Aligned the dialog preview with the real layout: the logo no longer reserves space when unset and the scale badge is visible in the preview too.
+- Strengthened remaining text fitting in the topographic profile and overview section.
+
+## Version 1.7.5 - 2026-05-09
+
+### Italiano
+
+- Migliorata l'impaginazione professionale del cartiglio: titolo e metadati usano wrapping e riduzione font controllata in base allo spazio reale disponibile.
+- Il blocco attributi nel cartiglio non viene piu' marcato come completo se una riga non entra senza tagli o sovrapposizioni; in quel caso resta un estratto e la tabella completa viene generata nella pagina attributi.
+- Migliorata la tavola del profilo topografico: intestazione piu' leggibile, fonte dati adattiva, tabella picchetti con colonne distribuite e testi ridimensionati per evitare sovrapposizioni.
+- Aumentate le dimensioni minime leggibili per titoli, sottotitoli, metadati e legenda nei formati A4, A3 e A0.
+
+### English
+
+- Improved professional title-block composition: title and metadata now use wrapping and controlled font fitting based on the real available space.
+- The attribute block in the title block is no longer considered complete when a row cannot fit without clipping or overlap; in that case it stays as an excerpt and the full attribute table is generated on its own page.
+- Improved the topographic profile sheet: clearer header, adaptive data-source text, stake table with distributed columns and fitted text to avoid overlaps.
+- Increased readable minimum sizes for titles, subtitles, metadata and legend across A4, A3 and A0.
+
+## Version 1.7.4 - 2026-05-09
+
+### Italiano
+
+- Spostata la preparazione del profilo topografico in un `QgsTask`: download/campionamento quote e rendering immagine profilo non bloccano piu' direttamente il thread principale.
+- Aggiunta finestra di avanzamento annullabile durante la preparazione del profilo.
+- Separata la fase dati dalla fase layout: `QgsPrintLayout` ed export PDF restano nel thread principale, mentre il profilo viene passato al layout come asset gia' pronto.
+- Pulizia automatica della cartella temporanea del profilo dopo l'export.
+
+### English
+
+- Moved topographic profile preparation into a `QgsTask`: elevation download/sampling and profile image rendering no longer directly block the main thread.
+- Added a cancelable progress dialog during profile preparation.
+- Separated data preparation from layout composition: `QgsPrintLayout` and PDF export stay on the main thread, while the profile is passed to the layout as a prebuilt asset.
+- Automatically cleans the temporary profile folder after export.
+
+## Version 1.7.3 - 2026-05-09
+
+### Italiano
+
+- Ridotto il blocco percepito di QGIS durante i profili online: campionamento OpenTopoData piu' adatto alla risoluzione di stampa, massimo numero di campioni online controllato e pause brevi con elaborazione eventi Qt.
+- Il plugin non attende piu' lunghi `Retry-After` nel thread principale: se il servizio richiede un'attesa eccessiva, viene generata la pagina di avviso nel PDF.
+- Migliorata la mappa di inquadramento: non usa piu' automaticamente l'estensione totale di tutti i layer, ma sceglie un contesto leggibile tra layer attivo, layer visibili, area CRS/fuso o buffer controllato della tavola.
+- Ridotti spazi bianchi nel cartiglio e nella mappa di inquadramento.
+- Aggiunto estratto attributi nel cartiglio quando una singola feature e tutti i suoi campi entrano nello spazio disponibile; in caso contrario resta la pagina attributi completa.
+
+### English
+
+- Reduced perceived QGIS blocking during online profiles: OpenTopoData sampling is now better matched to print resolution, online samples are controlled and short waits process Qt events.
+- The plugin no longer waits for long `Retry-After` values in the main thread: if the service asks for excessive waiting, a PDF warning page is generated.
+- Improved the overview map: it no longer automatically uses the full extent of every layer, but chooses a readable context from active layer, visible layers, CRS/zone area or a controlled map-sheet buffer.
+- Reduced whitespace in the title block and overview map.
+- Added an attribute excerpt inside the title block when one feature and all its fields fit the available space; otherwise the full attribute page is preserved.
+
+## Version 1.7.2 - 2026-05-09
+
+### Italiano
+
+- Aggiunto monitor quota OpenTopoData nella scheda `Profilo`.
+- Il monitor mostra quota residua/limite se il servizio espone gli header, richieste inviate nella sessione QGIS, eventuale attesa da `Retry-After` e stima delle richieste online necessarie per il profilo.
+- Quando OpenTopoData non espone header di quota, la finestra lo indica chiaramente invece di mostrare valori inventati.
+
+### English
+
+- Added an OpenTopoData quota monitor to the `Profile` tab.
+- The monitor shows remaining/limit quota when the service exposes headers, requests sent in the QGIS session, any `Retry-After` wait and the estimated online requests needed for the profile.
+- When OpenTopoData does not expose quota headers, the dialog states that clearly instead of showing invented values.
+
+## Version 1.7.1 - 2026-05-09
+
+### Italiano
+
+- Gestito HTTP 429 di OpenTopoData con intervallo tra richieste, retry mirato e rispetto dell'header `Retry-After` quando disponibile.
+- L'export PDF non viene piu' interrotto dal rate limit online: viene aggiunta una pagina di avviso per il profilo non generato.
+- Aggiornata la nota nella scheda `Profilo` per indicare che il servizio pubblico OpenTopoData puo' limitare richieste ravvicinate.
+
+### English
+
+- Handled OpenTopoData HTTP 429 with request pacing, targeted retry and `Retry-After` support when available.
+- The PDF export is no longer interrupted by the online rate limit: a warning page is added for the missing profile.
+- Updated the `Profile` tab note to state that the public OpenTopoData service can limit frequent requests.
+
+## Version 1.7 - 2026-05-09
+
+### Italiano
+
+- Il profilo topografico ora viene generato una sola volta sulla linea intercettata dal secondo tracciamento: se il layer attivo e' lineare segue il tratto della geometria del layer, altrimenti usa la linea disegnata dall'utente.
+- Aggiunta la sorgente `Genera Profilo da progetto (DTM/DEM)`, con campionamento della banda 1 dei raster gia' caricati nel progetto QGIS.
+- La scheda `Profilo` mostra il riferimento della sorgente altimetrica: URL/dataset OpenTopoData o raster selezionato nel progetto.
+- Rifatta la grafica del profilo con griglia tecnica, progressiva, quote, picchetti e pagina A3 dedicata.
+- Migliorata l'impaginazione di stampa con testi piu' leggibili e mappa di inquadramento reale nel cartiglio.
+
+### English
+
+- The topographic profile is now generated once on the line intercepted by the second trace: if the active layer is linear it follows the corresponding layer geometry segment, otherwise it uses the user-drawn line.
+- Added `Generate Profile from project (DTM/DEM)`, sampling band 1 from raster layers already loaded in the QGIS project.
+- The `Profile` tab now shows the elevation source reference: OpenTopoData URL/datasets or the selected project raster.
+- Rebuilt the profile graphic with technical grid, chainage, elevations, stakes and a dedicated A3 page.
+- Improved print composition with more readable text and a real overview map in the title block.
+
+## Version 1.6 - 2026-05-08
+
+### Italiano
+
+- Garantito l'output in un solo PDF finale: dashboard e profili usano immagini temporanee fuori dalla cartella di output e non generano PDF aggiuntivi.
+- Aggiunto selettore lingua italiano/inglese nella finestra principale.
+- Tradotte le principali voci dell'applicativo: menu, schede, controlli, messaggi, anteprima, cartiglio, legenda, attributi, dashboard e profilo.
+- Aggiornati README e changelog in forma bilingue.
+- Il profilo topografico ora richiede un secondo `Shift+Draw` direzionale quando l'opzione e' attiva.
+- La query altimetrica usa il secondo tracciamento dell'utente invece della linea centrale automatica dell'area.
+- Riequilibrate le proporzioni tra mappa e legenda aumentando lo spazio del cartiglio e la dimensione dei simboli/testi legenda.
+
+### English
+
+- Ensured a single final PDF output: dashboards and profiles use temporary images outside the output folder and do not generate extra PDFs.
+- Added an Italian/English language selector in the main dialog.
+- Translated the main application labels: menus, tabs, controls, messages, preview, title block, legend, attributes, dashboard and profile.
+- Updated README and changelog in bilingual form.
+- The topographic profile now requests a second directional `Shift+Draw` when the option is enabled.
+- The elevation query uses the user's second trace instead of the automatic centerline of the area.
+- Rebalanced map/legend proportions by increasing title block space and legend symbol/text size.
+
+## Version 1.5 - 2026-05-08
+
+- L'export produce sempre un solo PDF:
+  - pagina principale cartografica;
+  - eventuale pagina attributi filtrata;
+  - eventuali pagine dashboard;
+  - eventuali pagine profilo topografico.
+- Rimossi gli export PDF separati per attributi, dashboard e profilo.
+- Stabilizzata la scheda `Profilo`: la selezione del campo identita resta utilizzabile e aggiorna correttamente i titoli delle entita rilevate.
+- La tabella attributi usa gli ID delle sole geometrie realmente intercettate dall'area `Shift+Draw`.
+- Migliorata l'anteprima: ora prova a renderizzare i layer reali sull'estensione selezionata e riproduce proporzioni effettive di pagina, mappa, cartiglio, legenda, freccia nord e barra di scala.
+- Riequilibrato il layout cartografico:
+  - cartiglio piu ampio;
+  - legenda piu leggibile;
+  - mappa meno dominante rispetto agli elementi tecnici;
+  - scala grafica con segmenti arrotondati per difetto, piu aderenti alla larghezza disponibile.
+
+## Version 1.4 - 2026-05-08
+
+- Aggiunta scheda `Profilo` nella finestra di stampa.
+- Il plugin rileva le geometrie del layer attivo che intersecano l'area selezionata con `Shift+Draw`.
+- Aggiunte tre modalita per il titolo del profilo topografico:
+  - campo identita del layer;
+  - titoli manuali editabili per ogni entita rilevata;
+  - titolo unico.
+- Se piu geometrie sono interessate dal profilo, il plugin puo produrre profili titolati in base all'identita delle singole entita.
+- L'interrogazione DEM online viene eseguita una sola volta per l'area selezionata e riutilizzata per generare gli output titolati.
+- Aggiornata la versione mostrata nella scheda Info.
+
+## Version 1.3 - 2026-05-08
+
+- Riequilibrato il layout di stampa principale in stile GIS professionale:
+  - pannello laterale piu ampio e proporzionato alla pagina;
+  - mappa meno invadente e piu coerente con legenda/cartiglio;
+  - pannello inferiore ridimensionato per non comprimere legenda e metadati.
+- Migliorata la leggibilita della legenda:
+  - font piu grande;
+  - simboli legenda piu visibili;
+  - spaziatura aumentata;
+  - area legenda dedicata.
+- Corretta la logica della scala grafica:
+  - calcolo basato sulla larghezza fisica disponibile in stampa;
+  - segmenti scelti con valori cartografici leggibili;
+  - migliore coerenza tra scala nominale, mappa e barra grafica.
+- Aggiornata l'anteprima stilizzata per riflettere le nuove proporzioni di stampa.
+
+## Version 1.2 - 2026-05-08
+
+- Aggiunto README completo con descrizione funzionalita, flusso operativo e note tecniche.
+- Aggiornato `metadata.txt` con autore, email, homepage, tag, about esteso e changelog sintetico.
+- Aggiunto `AUTHOR.md` con metadata autore allineato al plugin Quick CRS Fixer.
+- Aggiunta regola di versionamento: ogni modifica successiva deve incrementare `version` in `metadata.txt` e aggiungere una voce in questo changelog.
+- Esteso editor dashboard:
+  - titolo grafici;
+  - sottotitolo;
+  - selezione multipla campi categoria;
+  - campo valore opzionale;
+  - aggregazione Somma, Media, Minimo, Massimo, Conteggio;
+  - etichette e percentuali;
+  - numero massimo categorie;
+  - ordinamento.
+- Aggiornata generazione dashboard per creare grafici per piu campi selezionati.
+- Aggiunto backend profilo topografico online:
+  - campionamento della linea centrale dell'area selezionata con Shift+Draw;
+  - trasformazione coordinate in EPSG:4326;
+  - interrogazione OpenTopoData;
+  - generazione immagine profilo e PDF separato.
+
+## Version 1.1
+
+- Migliorato layout PDF con cartiglio, griglia coordinate, scala, freccia nord e legenda.
+- Aggiunta gestione tabella attributi filtrata sull'area selezionata.
+- Aggiunta scheda Info con logo autore e collegamenti ad altri plugin.
+- Aggiunta icona plugin.
+
+## Version 1.0
+
+- Prima versione operativa del flusso Shift+Draw per esportazione PDF da canvas QGIS.
