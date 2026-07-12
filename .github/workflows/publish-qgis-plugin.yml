@@ -36,6 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import os
           from pathlib import Path
           import configparser
 
@@ -50,10 +51,11 @@ jobs:
           if not version:
               raise SystemExit("Version not found in metadata.txt")
 
-          Path(".qgis_plugin_version").write_text(version, encoding="utf-8")
+          out_file = Path(os.environ["RUNNER_TEMP"]) / ".qgis_plugin_version"
+          out_file.write_text(version, encoding="utf-8")
           PY
 
-          version="$(cat .qgis_plugin_version)"
+          version="$(cat "$RUNNER_TEMP/.qgis_plugin_version")"
           echo "plugin_version=$version" >>"$GITHUB_OUTPUT"
 
           if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
