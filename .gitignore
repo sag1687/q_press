@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.zip
+.qgis_plugin_version
+.DS_Store
+Thumbs.db
+desktop.ini
