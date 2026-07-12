@@ -3,14 +3,18 @@ import shutil
 import tempfile
 import traceback
 
-from qgis.core import QgsApplication, QgsTask
+from qgis.core import QgsApplication, QgsTask, Qgis
 from qgis.PyQt.QtWidgets import QAction, QMessageBox, QDialog, QProgressDialog
 from qgis.PyQt.QtCore import Qt, QTimer
 from qgis.PyQt.QtGui import QIcon
+from .qt_compat import ensure_qdialog_compat, ensure_qt_compat
 from .tools.map_tool import QpressMapTool
 from .layout.layout_builder import build_and_export_layout, prepare_topographic_profile_request
 from .layout.topographic_profile import build_topographic_profile_images
 from .dialogs.settings_dialog import SettingsDialog
+
+ensure_qt_compat(Qt)
+ensure_qdialog_compat(QDialog)
 
 
 class QPressProfileTask(QgsTask):
@@ -74,6 +78,20 @@ class QPressPlugin:
     def _text(self, italian, english, language=None):
         return english if (language or self.language) == "en" else italian
 
+    def _message_level(self, name):
+        message_level = getattr(Qgis, "MessageLevel", None)
+        if message_level is not None and hasattr(message_level, name):
+            return getattr(message_level, name)
+        return getattr(Qgis, name, getattr(Qgis, "Info", 0))
+
+    def _push_message(self, message, level_name="Info", duration=5):
+        level = self._message_level(level_name)
+        message_bar = self.iface.messageBar()
+        try:
+            message_bar.pushMessage("Q-Press", message, level, duration)
+        except TypeError:
+            message_bar.pushMessage("Q-Press", message, level)
+
     def initGui(self):
         """Create the menu entries and toolbar icons."""
         icon_path = os.path.join(os.path.dirname(__file__), "resources", "qpress_icon.svg")
@@ -104,10 +122,8 @@ class QPressPlugin:
         self.pending_export = None
         self.map_tool.set_draw_mode("area")
         self.iface.mapCanvas().setMapTool(self.map_tool)
-        self.iface.messageBar().pushMessage(
-            "Q-Press",
+        self._push_message(
             self._text("Shift + Drag per selezionare l'area", "Shift + Drag to select the map area"),
-            level=0,
         )
 
     def on_draw_completed(self, rect, start_point, end_point):
@@ -115,7 +131,8 @@ class QPressPlugin:
         self.iface.mapCanvas().unsetMapTool(self.map_tool)
         self.iface.mapCanvas().setCursor(Qt.ArrowCursor)
 
-        # FIX: Esecuzione differita per evitare crash quando si apre un dialog modale da un evento del mouse
+        # FIX: Esecuzione differita per evitare crash quando si apre un dialog
+        # modale da un evento del mouse
         if self.capture_mode == "profile":
             QTimer.singleShot(0, lambda: self.process_profile_export(rect, start_point, end_point))
         else:
@@ -140,25 +157,26 @@ class QPressPlugin:
             selection_extent=rect,
             map_settings=self.iface.mapCanvas().mapSettings(),
         )
-        if dialog.exec_() != QDialog.Accepted:
+        if dialog.exec() != QDialog.Accepted:
             return
 
         settings = dialog.get_settings()
         self.language = settings.get("language", "it")
         if self.action:
             self.action.setText(self._text("Q-Press: Area in PDF", "Q-Press: Area to PDF"))
-        if not settings['output_dir']:
+        if not settings["output_dir"]:
             QMessageBox.warning(
                 self.iface.mainWindow(),
                 "Q-Press",
                 self._text("Devi selezionare una cartella di destinazione.", "Select an output folder."),
             )
             return
-        if (
-            settings.get("topo_profile", False) and
-            settings.get("topo_profile_source") == "project" and
-            not settings.get("topo_profile_raster_id")
-        ):
+        needs_project_raster = all((
+            settings.get("topo_profile", False),
+            settings.get("topo_profile_source") == "project",
+            not settings.get("topo_profile_raster_id"),
+        ))
+        if needs_project_raster:
             QMessageBox.warning(
                 self.iface.mainWindow(),
                 "Q-Press",
@@ -179,13 +197,11 @@ class QPressPlugin:
             self.capture_mode = "profile"
             self.map_tool.set_draw_mode("profile")
             self.iface.mapCanvas().setMapTool(self.map_tool)
-            self.iface.messageBar().pushMessage(
-                "Q-Press",
+            self._push_message(
                 self._text(
                     "Profilo topografico: esegui un secondo Shift + Drag lungo la direzione del profilo",
                     "Topographic profile: perform a second Shift + Drag along the profile direction",
                 ),
-                level=0,
             )
             return
 
@@ -224,10 +240,13 @@ class QPressPlugin:
         try:
             request = prepare_topographic_profile_request(layer, rect, map_settings, settings)
         except Exception as error:
+            fallback_title = settings.get("topo_profile_single_title")
+            if not fallback_title:
+                fallback_title = self._text("Profilo topografico", "Topographic profile", language)
             settings["topo_profile_prebuilt"] = [
                 {
                     "path": "",
-                    "title": settings.get("topo_profile_single_title") or self._text("Profilo topografico", "Topographic profile", language),  # noqa: E501
+                    "title": fallback_title,
                     "error": str(error),
                 }
             ]
@@ -254,10 +273,9 @@ class QPressPlugin:
 
             if not result or task.isCanceled():
                 shutil.rmtree(task.asset_dir, ignore_errors=True)
-                self.iface.messageBar().pushMessage(
-                    "Q-Press",
+                self._push_message(
                     self._text("Generazione profilo annullata.", "Profile generation canceled.", language),
-                    level=1,
+                    "Warning",
                 )
                 return
 
@@ -274,10 +292,8 @@ class QPressPlugin:
 
     def _run_layout_export(self, layer, rect, settings, map_settings):
         language = settings.get("language", self.language)
-        self.iface.messageBar().pushMessage(
-            "Q-Press",
+        self._push_message(
             self._text("Generazione layout in corso...", "Generating layout...", language),
-            level=0,
         )
         try:
             output_path = build_and_export_layout(
@@ -286,14 +302,13 @@ class QPressPlugin:
                 map_settings,
                 settings,
             )
-            self.iface.messageBar().pushMessage(
-                "Q-Press",
+            self._push_message(
                 self._text(
                     f"Esportazione completata: {output_path}",
                     f"Export completed: {output_path}",
                     language,
                 ),
-                level=0,
+                "Success",
             )
         except Exception as e:
             traceback.print_exc()

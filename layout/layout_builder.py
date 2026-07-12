@@ -35,13 +35,24 @@ from qgis.core import (
     QgsLayoutItemAttributeTable,
     QgsLayoutMultiFrame,
     QgsWkbTypes,
-    Qgis
+    Qgis,
 )
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor, QFont
+from ..qt_compat import ensure_qfont_compat, ensure_qt_compat
 from .chart_generator import build_dashboard_images
 from .pdf_exporter import export_to_pdf
 from .topographic_profile import DATASET_STACK, OPEN_TOPO_DATA_METHOD, build_topographic_profile_images
+
+ensure_qt_compat(Qt)
+ensure_qfont_compat(QFont)
+
+
+def _qgis_message_level(name):
+    message_level = getattr(Qgis, "MessageLevel", None)
+    if message_level is not None and hasattr(message_level, name):
+        return getattr(message_level, name)
+    return getattr(Qgis, name, getattr(Qgis, "Info", 0))
 
 
 def safe_filename(name):
@@ -212,7 +223,7 @@ def _nice_step(raw_value):
     if raw_value <= 0:
         return 1.0
     exponent = math.floor(math.log10(raw_value))
-    fraction = raw_value / (10 ** exponent)
+    fraction = raw_value / (10**exponent)
     if fraction < 1.5:
         base = 1
     elif fraction < 3:
@@ -221,7 +232,7 @@ def _nice_step(raw_value):
         base = 5
     else:
         base = 10
-    return base * (10 ** exponent)
+    return base * (10**exponent)
 
 
 def _nice_floor_step(raw_value):
@@ -230,7 +241,7 @@ def _nice_floor_step(raw_value):
     exponent = math.floor(math.log10(raw_value))
     for exp in range(exponent + 1, exponent - 5, -1):
         for base in (5, 2, 1):
-            candidate = base * (10 ** exp)
+            candidate = base * (10**exp)
             if candidate <= raw_value:
                 return max(candidate, 1.0)
     return 1.0
@@ -253,15 +264,36 @@ def _calculate_degree_interval(project_interval):
     return 10.0
 
 
-def get_page_dimensions(fmt, orientation):
+def _is_custom_format(fmt):
+    return str(fmt or "").lower() in ("custom", "personalizzato")
+
+
+def get_page_dimensions(fmt, orientation, custom_width_mm=None, custom_height_mm=None):
     formats = {"A4": (297, 210), "A3": (420, 297), "A0": (1189, 841)}
-    w, h = formats.get(fmt, (297, 210))
+    if _is_custom_format(fmt):
+        try:
+            w = max(float(custom_width_mm or 297.0), 50.0)
+            h = max(float(custom_height_mm or 210.0), 50.0)
+        except (TypeError, ValueError):
+            w, h = 297.0, 210.0
+    else:
+        w, h = formats.get(fmt, (297, 210))
+    long_side = max(w, h)
+    short_side = min(w, h)
     if orientation == "Portrait":
-        return h, w
-    return w, h
+        return short_side, long_side
+    return long_side, short_side
 
 
-def get_layout_metrics(fmt):
+def get_layout_metrics(fmt, page_w=None, page_h=None):
+    if _is_custom_format(fmt):
+        long_side = max(float(page_w or 297.0), float(page_h or 210.0))
+        if long_side >= 841.0:
+            fmt = "A0"
+        elif long_side >= 420.0:
+            fmt = "A3"
+        else:
+            fmt = "A4"
     if fmt == "A0":
         return {
             "margin": 20.0,
@@ -346,7 +378,8 @@ def _format_coord(value):
         decimals = 1
     else:
         decimals = 3
-    return f"{value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{
+        value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def _text(lang, italian, english):
@@ -466,7 +499,7 @@ def _compact_attribute_fields(layer, max_fields):
         else:
             regular.append(field_name)
     ordered = priority + regular
-    return ordered[:max(max_fields, 0)], len(fields)
+    return ordered[: max(max_fields, 0)], len(fields)
 
 
 def _value_text(value, max_chars=34):
@@ -536,7 +569,9 @@ def _add_compact_attribute_block(layout, layer, features, x, y, w, h, font_size,
     cursor_y = y + title_h + (1.2 if show_title else 0.0)
     row_capacity = max(_estimated_char_capacity(w, row_font_size), 12)
     for field_name, full_value, full_row in raw_rows:
-        row_text = full_row if complete else f"{field_name}: {_value_text(full_value, row_capacity)}"
+        row_text = full_row if complete else f"{field_name}: {
+            _value_text(
+                full_value, row_capacity)}"
         _add_fitted_label(
             layout,
             row_text,
@@ -660,6 +695,24 @@ def _configure_map_item(layout, map_item, extent, map_settings, crs):
     except AttributeError:
         pass
     layout.addLayoutItem(map_item)
+
+
+def _manual_scale_from_settings(settings):
+    if settings.get("scale_mode") != "manual":
+        return None
+    try:
+        scale_value = float(settings.get("map_scale", 0))
+    except (TypeError, ValueError):
+        return None
+    return scale_value if scale_value > 0 else None
+
+
+def _apply_manual_map_scale(map_item, settings):
+    scale_value = _manual_scale_from_settings(settings)
+    if not scale_value:
+        return False
+    map_item.setScale(scale_value)
+    return True
 
 
 def _configure_primary_grid(map_item, interval, font_size):
@@ -1147,7 +1200,12 @@ def _add_map_decorations(layout, map_item, metrics, map_x, map_y, map_h, lang="i
         map_scale_value = map_item.scale()
     except Exception:
         map_scale_value = 0
-    scale_label = f"{_text(lang, 'Scala', 'Scale')} {_scale_value_text(map_scale_value)}"
+    scale_label = f"{
+        _text(
+            lang,
+            'Scala',
+            'Scale')} {
+        _scale_value_text(map_scale_value)}"
     scale_label_h = max(metrics["small"] * 0.58, 4.0)
     scale_box_w = metrics["scale_w"] + 16.0
     scale_box_h = metrics["scale_h"] + scale_label_h + 8.0
@@ -1249,12 +1307,12 @@ def _extent_ratio(candidate, reference):
 
 
 def _extent_contains(candidate, reference):
-    return (
-        candidate.xMinimum() <= reference.xMinimum()
-        and candidate.xMaximum() >= reference.xMaximum()
-        and candidate.yMinimum() <= reference.yMinimum()
-        and candidate.yMaximum() >= reference.yMaximum()
-    )
+    return all((
+        candidate.xMinimum() <= reference.xMinimum(),
+        candidate.xMaximum() >= reference.xMaximum(),
+        candidate.yMinimum() <= reference.yMinimum(),
+        candidate.yMaximum() >= reference.yMaximum(),
+    ))
 
 
 def _fit_extent_to_aspect(extent, aspect):
@@ -1323,15 +1381,17 @@ def _build_overview_map(layout, map_item, source_extent, x, y, w, h, crs, map_se
             pass
 
     overview_extent = context_extent
-    if not overview_extent or overview_extent.isEmpty() or not overview_extent.isFinite():
+    overview_missing = not overview_extent or overview_extent.isEmpty() or not overview_extent.isFinite()
+    overview_too_small = False
+    if not overview_missing:
+        overview_too_small = all((
+            overview_extent.width() < source_extent.width() * 2.0,
+            overview_extent.height() < source_extent.height() * 2.0,
+        ))
+    if overview_missing or overview_too_small:
         buffer_distance = max(source_extent.width(), source_extent.height()) * 2.5
         overview_extent = _buffered_rect(source_extent, buffer_distance) if buffer_distance > 0 else source_extent
-    elif (
-        overview_extent.width() < source_extent.width() * 2.0
-        and overview_extent.height() < source_extent.height() * 2.0
-    ):
-        buffer_distance = max(source_extent.width(), source_extent.height()) * 2.5
-        overview_extent = _buffered_rect(source_extent, buffer_distance) if buffer_distance > 0 else source_extent
+
     overview_map.setExtent(overview_extent)
     _set_item_frame(overview_map, 0.3, QColor(17, 24, 39))
     try:
@@ -1350,7 +1410,9 @@ def _build_overview_map(layout, map_item, source_extent, x, y, w, h, crs, map_se
     return overview_map
 
 
-def _add_overview_section(layout, map_item, extent, x, y, w, h, crs, map_settings, lang, font_size, context_extent=None):  # noqa: E501
+def _add_overview_section(
+    layout, map_item, extent, x, y, w, h, crs, map_settings, lang, font_size, context_extent=None
+):  # noqa: E501
     if w <= 18.0 or h <= 18.0:
         return None
     inner = _add_section_frame(layout, _text(lang, "INQUADRAMENTO", "OVERVIEW"), x, y, w, h, font_size, lang)
@@ -1568,8 +1630,9 @@ def _page_picture(layout, page_index, image_path, x, y, w, h):
 
 
 def _add_report_page_header(layout, page_index, page_w, page_h, title, subtitle=None):
-    _page_rect(layout, page_index, 8.0, 8.0, page_w - 16.0, page_h -
-               16.0, QColor(255, 255, 255), QColor(17, 24, 39), 0.25)
+    _page_rect(
+        layout, page_index, 8.0, 8.0, page_w - 16.0, page_h - 16.0, QColor(255, 255, 255), QColor(17, 24, 39), 0.25
+    )
     large_page = page_w >= 400.0
     title_size = 15 if large_page else 13
     subtitle_size = 10 if large_page else 9
@@ -1826,8 +1889,9 @@ def _build_vertical_panel(
         lang,
     )
     if meta_inner:
-        _add_key_value_table(layout, _metadata_rows(layer.name(), crs_authid, extent, lang),
-                             *meta_inner, max(metrics.get("small", 8), 7))
+        _add_key_value_table(
+            layout, _metadata_rows(layer.name(), crs_authid, extent, lang), *meta_inner, max(metrics.get("small", 8), 7)
+        )
     cursor_y += meta_h + gap
 
     remaining_h = panel_y + panel_h - cursor_y - pad
@@ -2031,8 +2095,16 @@ def _profile_source_summary(profile, lang):
     if source_info.get("type") == "project":
         return _text(
             lang,
-            f"Fonte quote: raster progetto '{source_info.get('name', '')}', banda {source_info.get('band', 1)}.",
-            f"Elevation source: project raster '{source_info.get('name', '')}', band {source_info.get('band', 1)}.",
+            f"Fonte quote: raster progetto '{
+                source_info.get(
+                    'name', '')}', banda {
+                source_info.get(
+                    'band', 1)}.",
+            f"Elevation source: project raster '{
+                        source_info.get(
+                            'name', '')}', band {
+                                source_info.get(
+                                    'band', 1)}.",
         )
     return _text(
         lang,
@@ -2116,8 +2188,13 @@ def build_and_export_layout(layer, rect, map_settings, settings):
 
         fmt = settings.get("format", "A4")
         orientation = settings.get("orientation", "Landscape")
-        page_w, page_h = get_page_dimensions(fmt, orientation)
-        metrics = get_layout_metrics(fmt)
+        page_w, page_h = get_page_dimensions(
+            fmt,
+            orientation,
+            settings.get("custom_page_width_mm"),
+            settings.get("custom_page_height_mm"),
+        )
+        metrics = get_layout_metrics(fmt, page_w, page_h)
 
         page = layout.pageCollection().page(0)
         page.setPageSize(QgsLayoutSize(page_w, page_h, QgsUnitTypes.LayoutMillimeters))
@@ -2125,8 +2202,9 @@ def build_and_export_layout(layer, rect, map_settings, settings):
 
         output_dir = settings.get("output_dir")
         if not output_dir:
-            raise Exception(_text(settings.get("language", "it"),
-                            "Directory di output non valida.", "Invalid output directory."))
+            raise Exception(
+                _text(settings.get("language", "it"), "Directory di output non valida.", "Invalid output directory.")
+            )
         os.makedirs(output_dir, exist_ok=True)
         asset_dir = tempfile.mkdtemp(prefix="qpress_assets_")
         lang = settings.get("language", "it")
@@ -2183,6 +2261,8 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         map_item.attemptMove(QgsLayoutPoint(map_x, map_y, QgsUnitTypes.LayoutMillimeters))
         map_item.attemptResize(QgsLayoutSize(map_w, map_h, QgsUnitTypes.LayoutMillimeters))
         _configure_map_item(layout, map_item, extent, map_settings, project.crs())
+        if _apply_manual_map_scale(map_item, settings):
+            extent = map_item.extent()
         _add_rectangle(
             layout,
             map_x - 1.0,
@@ -2199,8 +2279,9 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         _configure_secondary_grid(map_item, project.crs().authid(), interval, metrics["small"])
         _add_map_decorations(layout, map_item, metrics, map_x, map_y, map_h, lang)
 
-        selection_features = _features_in_selection(
-            layer, rect, map_settings) if layer.type() == QgsMapLayerType.VectorLayer else []
+        selection_features = (
+            _features_in_selection(layer, rect, map_settings) if layer.type() == QgsMapLayerType.VectorLayer else []
+        )
         dashboard_images = []
         chart_thumbnail = None
         dashboard_placement = settings.get("dashboard_placement", "Nel cartiglio (se possibile)")
@@ -2217,11 +2298,12 @@ def build_and_export_layout(layer, rect, map_settings, settings):
             "Cartiglio + Stampe successive",
         )
 
-        if (
-            settings.get("dashboard_enabled", False) and
-            layer.type() == QgsMapLayerType.VectorLayer and
-            settings.get("dashboard_category_field", "")
-        ):
+        dashboard_enabled = all((
+            settings.get("dashboard_enabled", False),
+            layer.type() == QgsMapLayerType.VectorLayer,
+            settings.get("dashboard_category_field", ""),
+        ))
+        if dashboard_enabled:
             dashboard_images = build_dashboard_images(
                 layer_name=layer.name(),
                 features=selection_features,
@@ -2234,8 +2316,9 @@ def build_and_export_layout(layer, rect, map_settings, settings):
                 include_bar=settings.get("dashboard_include_bar", True),
                 include_percent=settings.get("dashboard_include_percent", True),
                 output_dir=asset_dir,
-                chart_title=settings.get("dashboard_title", _text(
-                    lang, "Dashboard cartografico", "Cartographic dashboard")),
+                chart_title=settings.get(
+                    "dashboard_title", _text(lang, "Dashboard cartografico", "Cartographic dashboard")
+                ),
                 chart_subtitle=settings.get("dashboard_subtitle", ""),
                 aggregation=settings.get("dashboard_aggregation", "Somma"),
                 show_labels=settings.get("dashboard_show_labels", True),
@@ -2323,10 +2406,11 @@ def build_and_export_layout(layer, rect, map_settings, settings):
                         "Topographic profile not generated: elevation data unavailable.",
                     ),
                     "Q-Press",
-                    Qgis.Warning,
+                    _qgis_message_level("Warning"),
                 )
 
-        output_filename = f"qpress_{safe_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        output_filename = f"qpress_{safe_name}_{
+            datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         output_path = os.path.join(output_dir, output_filename)
         export_to_pdf(layout, output_path)
         if asset_dir and os.path.exists(asset_dir):
@@ -2339,8 +2423,10 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         if asset_dir and os.path.exists(asset_dir):
             shutil.rmtree(asset_dir, ignore_errors=True)
         QgsMessageLog.logMessage(
-            f"Eccezione in build_and_export_layout: {str(e)}\n{traceback.format_exc()}",
+            f"Eccezione in build_and_export_layout: {
+                str(e)}\n{
+                traceback.format_exc()}",
             "Q-Press",
-            Qgis.Critical,
+            _qgis_message_level("Critical"),
         )
         raise e

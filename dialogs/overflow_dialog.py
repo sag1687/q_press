@@ -1,4 +1,8 @@
 from qgis.PyQt.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from .. import plugin_hub
+from ..qt_compat import ensure_qdialog_compat
+
+ensure_qdialog_compat(QDialog)
 
 
 def _text(language, italian, english):
@@ -10,17 +14,11 @@ class OverflowDialog(QDialog):
         super().__init__()
         self.setWindowTitle(_text(language, "Q-Press - Avviso Tabella Attributi", "Q-Press - Attribute Table Warning"))
 
-        self.setStyleSheet("""
-            QDialog { background-color: #0B192C; }
-            QLabel { color: #E2E8F0; font-size: 10pt; }
-            QCheckBox { color: #E2E8F0; spacing: 8px; }
-            QPushButton {
-                background-color: #2563EB; color: white; border: none;
-                border-radius: 5px; padding: 10px 20px; font-weight: bold;
+        self.setStyleSheet(plugin_hub.FAMILY_STYLE + """
+            QPushButton#btnCancel {
+                background: #1b2430; color: #c3ccd6; border-color: #2c3a48;
             }
-            QPushButton:hover { background-color: #3B82F6; }
-            QPushButton#btnCancel { background-color: #1E3A5F; color: #E2E8F0; }
-            QPushButton#btnCancel:hover { background-color: #2D4A77; }
+            QPushButton#btnCancel:hover { background: #22303e; }
         """)
 
         layout = QVBoxLayout()
@@ -45,7 +43,12 @@ class OverflowDialog(QDialog):
         layout.addWidget(self.chk_map)
 
         self.chk_attr = QCheckBox(
-            _text(language, "Aggiungi la tabella attributi come pagina successiva", "Add the attribute table as a following page"))  # noqa: E501
+            _text(
+                language,
+                "Aggiungi la tabella attributi come pagina successiva",
+                "Add the attribute table as a following page",
+            )
+        )  # noqa: E501
         self.chk_attr.setChecked(True)
         layout.addWidget(self.chk_attr)
 
@@ -68,7 +71,7 @@ def show_attribute_overflow_dialog(row_count, available_mm, estimated_mm, templa
     Mostra il dialog per l'overflow e restituisce le opzioni scelte.
     """
     dialog = OverflowDialog(row_count, available_mm, estimated_mm, template_name, language)
-    result = dialog.exec_()
+    result = dialog.exec()
 
     if result == QDialog.Accepted:
         return {

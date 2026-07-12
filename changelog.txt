@@ -1,5 +1,67 @@
 # Q-Press Changelog
 
+## Version 2.0.0 - 2026-07-12
+
+### Italiano
+
+- Nuovo tema scuro "slate blue" condiviso della famiglia di plugin SinoCloud (lo stesso di SARIAG e STAC Browser).
+- Selettore lingua con bandiere (Italiano / English).
+- Nuovo menu a tendina nella scheda Info con gli altri plugin dell'autore, descrizione bilingue e link GitHub.
+- Homepage aggiornata a sinocloud.it; scheda Info con versione e sito.
+- Rimossi dal pacchetto gli script di sviluppo e i loghi non utilizzati.
+- Verifica flake8 e compilazione Qt6 (QGIS 4) con retrocompatibilita' Qt5 (QGIS 3).
+
+### English
+
+- New "slate blue" dark theme shared by the SinoCloud plugin family (same as SARIAG and STAC Browser).
+- Language selector with flags (Italiano / English).
+- New drop-down in the Info tab with the author's other plugins, bilingual description and GitHub links.
+- Homepage updated to sinocloud.it; Info tab shows version and website.
+- Development scripts and unused logos removed from the package.
+- flake8 check and Qt6 (QGIS 4) compilation verified, keeping Qt5 (QGIS 3) backwards compatibility.
+
+## Version 1.9.2 - 2026-05-25
+
+### Italiano
+
+- Corretto errore runtime su QGIS 4.0.2 nella barra messaggi: `pushMessage()` ora usa livelli `Qgis.MessageLevel` e argomenti posizionali compatibili.
+- Centralizzata la pubblicazione dei messaggi del plugin per evitare regressioni nelle diverse firme PyQGIS.
+
+### English
+
+- Fixed QGIS 4.0.2 runtime error in the message bar: `pushMessage()` now uses compatible `Qgis.MessageLevel` values and positional arguments.
+- Centralized plugin message publishing to avoid regressions across PyQGIS method signatures.
+
+## Version 1.9.1 - 2026-05-25
+
+### Italiano
+
+- Aggiunte freccette nella barra superiore per ridurre o aumentare la finestra del plugin quando il ridimensionamento nativo di QGIS risulta scomodo.
+- La scheda `Configurazione` ora e' scrollabile, cosi i controlli restano raggiungibili anche con finestra ridotta.
+- Aggiornati versione plugin, metadata, README e User-Agent OpenTopoData a `1.9.1`.
+
+### English
+
+- Added top-bar arrows to decrease or increase the plugin window when native QGIS resizing is awkward.
+- The `Configuration` tab is now scrollable, so controls remain reachable even when the window is reduced.
+- Updated plugin version, metadata, README and OpenTopoData User-Agent to `1.9.1`.
+
+## Version 1.9.0 - 2026-05-16
+
+### Italiano
+
+- Aggiunta compatibilita' operativa con QGIS 4.0 e Qt6 tramite shim per gli enum Qt spostati in PyQt6 e uso di `QDialog.exec()`.
+- Aggiunto controllo scala mappa: modalita' automatica predefinita o scala manuale `1:x` applicata al `QgsLayoutItemMap`.
+- Aggiunto formato foglio `Personalizzato` con larghezza e altezza in millimetri, oltre ai formati A4, A3 e A0.
+- Aggiunta scheda `Help` completa e scrollabile con workflow per tavola base, attributi, dashboard, profili topografici, output e controlli.
+
+### English
+
+- Added operational compatibility with QGIS 4.0 and Qt6 through shims for PyQt6 enum moves and `QDialog.exec()`.
+- Added map scale control: default automatic mode or manual `1:x` scale applied to the `QgsLayoutItemMap`.
+- Added `Custom` paper size with width and height in millimeters, in addition to A4, A3 and A0.
+- Added a complete scrollable `Help` tab with workflows for base sheets, attributes, dashboards, topographic profiles, output and checks.
+
 ## Version 1.8.0 - 2026-05-09
 
 ### Italiano

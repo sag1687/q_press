@@ -1,12 +1,13 @@
 import math
 import os
-from qgis.PyQt.QtCore import QPointF, QRectF, QSize, Qt, QUrl
-from qgis.PyQt.QtGui import QColor, QDesktopServices, QFont, QIcon, QPainter, QPen, QPixmap, QPolygonF
+from qgis.PyQt.QtCore import QPointF, QRectF, QSize, Qt, QTimer
+from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPen, QPixmap, QPolygonF
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
     QFileDialog,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -15,8 +16,10 @@ from qgis.PyQt.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QRadioButton,
+    QScrollArea,
     QSpinBox,
     QTabWidget,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -28,7 +31,16 @@ from qgis.core import (
     QgsMapRendererParallelJob,
     QgsMapSettings,
     QgsProject,
+    QgsRectangle,
     QgsUnitTypes,
+)
+from .. import plugin_hub
+from ..qt_compat import (
+    ensure_qdialog_compat,
+    ensure_qfont_compat,
+    ensure_qpainter_compat,
+    ensure_qt_compat,
+    ensure_selection_mode_compat,
 )
 from ..layout.topographic_profile import (
     API_URL,
@@ -39,6 +51,12 @@ from ..layout.topographic_profile import (
     OPEN_TOPO_DATA_SPACING_M,
     opentopodata_quota_status,
 )
+
+ensure_qt_compat(Qt)
+ensure_qdialog_compat(QDialog)
+ensure_qfont_compat(QFont)
+ensure_qpainter_compat(QPainter)
+ensure_selection_mode_compat(QListWidget)
 
 
 class SettingsDialog(QDialog):
@@ -53,137 +71,93 @@ class SettingsDialog(QDialog):
         self._translatable_widgets = []
         self._combo_models = {}
         self._tab_specs = []
+        self._window_size_step = QSize(80, 60)
 
-        self.setWindowTitle("Q-Press - Configurazione Avanzata di Stampa")
-        self.resize(820, 560)
+        self.setWindowTitle("Q-Press - Configurazione Stampa")
+        self.resize(900, 640)
+        self.setMinimumSize(720, 520)
+        self.setSizeGripEnabled(True)
 
-        self.setStyleSheet(
-            """
-            QDialog { background-color: #0B192C; }
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #1E3A5F;
-                border-radius: 8px;
-                margin-top: 15px;
-                background-color: #112B4A;
-                color: #E2E8F0;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 8px;
-                color: #60A5FA;
-            }
-            QLabel { color: #E2E8F0; font-size: 10pt; }
-            QLabel#header { font-size: 18pt; font-weight: bold; color: #60A5FA; }
+        # Shared SinoCloud family dark theme (see plugin_hub.py), plus
+        # Q-Press specific selectors restyled on the same palette.
+        self.setStyleSheet(plugin_hub.FAMILY_STYLE + """
+            QLabel#header { font-size: 18pt; font-weight: bold; color: #5b9bd5; }
             QLabel#recommendationLabel {
-                color: #BFDBFE;
+                color: #c3ccd6;
                 font-size: 9pt;
-                background-color: #0F2743;
-                border: 1px solid #1E3A5F;
+                background-color: #1b2430;
+                border: 1px solid #2c3a48;
                 border-radius: 6px;
                 padding: 6px 8px;
             }
-            QRadioButton { color: #E2E8F0; spacing: 8px; }
             QRadioButton::indicator { width: 18px; height: 18px; }
-            QLineEdit, QComboBox {
-                border: 1px solid #1E3A5F;
-                border-radius: 4px;
-                padding: 8px;
-                background-color: #0B192C;
-                color: #F8FAFC;
-            }
-            QComboBox::drop-down { border: none; width: 30px; }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 5px solid #60A5FA;
-                margin-right: 10px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #112B4A;
-                color: #F8FAFC;
-                selection-background-color: #2563EB;
-                outline: none;
-            }
-            QListWidget {
-                border: 1px solid #1E3A5F;
-                border-radius: 4px;
-                padding: 4px;
-                background-color: #0B192C;
-                color: #F8FAFC;
-                outline: none;
-            }
-            QListWidget::item {
-                padding: 5px;
-            }
+            QListWidget::item { padding: 5px; }
             QListWidget::item:selected {
-                background-color: #2563EB;
-                color: #FFFFFF;
+                background-color: #2c4f70;
+                color: #ffffff;
             }
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
+            QScrollArea { background-color: #141a22; border: none; }
+            QToolButton#windowSizeButton {
+                background-color: #1b2430;
+                color: #c3ccd6;
+                border: 1px solid #5b9bd5;
                 border-radius: 5px;
-                padding: 10px 20px;
+                min-width: 32px;
+                min-height: 28px;
+                padding: 2px 6px;
                 font-weight: bold;
             }
-            QPushButton:hover { background-color: #3B82F6; }
-            QPushButton#btnCancel { background-color: #1E3A5F; color: #E2E8F0; }
-            QPushButton#btnCancel:hover { background-color: #2D4A77; }
-            QPushButton#btnBrowse {
-                background-color: #1E3A5F;
-                color: #E2E8F0;
-                border: 1px solid #3B82F6;
+            QToolButton#windowSizeButton:hover { background-color: #22303e; }
+            QPushButton#btnCancel {
+                background: #1b2430; color: #c3ccd6; border-color: #2c3a48;
             }
-            QPushButton#btnBrowse:hover { background-color: #2D4A77; }
+            QPushButton#btnCancel:hover { background: #22303e; }
+            QPushButton#btnBrowse {
+                background: #1b2430;
+                color: #c3ccd6;
+                border: 1px solid #5b9bd5;
+            }
+            QPushButton#btnBrowse:hover { background: #22303e; }
             QLabel#previewLabel {
-                background-color: #070F1A;
-                border: 1px solid #1E3A5F;
+                background-color: #10151c;
+                border: 1px solid #2c3a48;
                 border-radius: 8px;
             }
-            QTabWidget::pane {
-                border: 1px solid #1E3A5F;
-                background-color: #0B192C;
-            }
-            QTabBar::tab {
-                background-color: #112B4A;
-                color: #E2E8F0;
-                border: 1px solid #1E3A5F;
-                padding: 8px 14px;
-                margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background-color: #2563EB;
-                color: #FFFFFF;
-            }
-            QLabel#infoTitle { color: #60A5FA; font-size: 16pt; font-weight: bold; }
-            QLabel#infoSubtle { color: #BFDBFE; font-size: 9pt; }
-        """
-        )
+            QLabel#infoTitle { color: #5b9bd5; font-size: 16pt; font-weight: bold; }
+            QLabel#infoSubtle { color: #8a97a5; font-size: 9pt; }
+        """)
 
         outer_layout = QVBoxLayout()
         top_bar = QHBoxLayout()
-        header = self._label("Q-PRESS: CONFIGURAZIONE AVANZATA", "Q-PRESS: ADVANCED PRINT SETUP")
+        header = self._label("Q-PRESS: STAMPA PDF", "Q-PRESS: PDF PRINT")
         header.setObjectName("header")
         header.setAlignment(Qt.AlignCenter)
         top_bar.addWidget(header, stretch=1)
 
         self.lbl_language = self._label("Lingua:", "Language:")
         self.combo_language = QComboBox()
-        self.combo_language.addItem("Italiano", "it")
-        self.combo_language.addItem("English", "en")
+        self.combo_language.addItem(plugin_hub.FLAG_IT + " Italiano", "it")
+        self.combo_language.addItem(plugin_hub.FLAG_EN + " English", "en")
         self.combo_language.currentIndexChanged.connect(self._on_language_changed)
         top_bar.addWidget(self.lbl_language)
         top_bar.addWidget(self.combo_language)
+        self.lbl_window_size = self._label("Finestra:", "Window:")
+        self.btn_window_smaller = self._window_size_button("<", -1)
+        self.btn_window_larger = self._window_size_button(">", 1)
+        top_bar.addWidget(self.lbl_window_size)
+        top_bar.addWidget(self.btn_window_smaller)
+        top_bar.addWidget(self.btn_window_larger)
         outer_layout.addLayout(top_bar)
 
         self.tabs = QTabWidget()
         outer_layout.addWidget(self.tabs)
 
-        config_tab = QWidget()
+        config_tab = QScrollArea()
+        config_tab.setWidgetResizable(True)
+        config_frame_shape = QFrame.Shape.NoFrame if hasattr(QFrame, "Shape") else QFrame.NoFrame
+        config_tab.setFrameShape(config_frame_shape)
+        config_tab.viewport().setStyleSheet("background-color: #141a22;")
+        config_content = QWidget()
         config_tab_layout = QVBoxLayout()
         config_tab_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -214,7 +188,15 @@ class SettingsDialog(QDialog):
         grp_format = self._group("Formato e Orientamento", "Format and Orientation")
         lay_format = QVBoxLayout()
         self.combo_format = QComboBox()
-        self.combo_format.addItems(["A4", "A3", "A0"])
+        self._register_combo(
+            self.combo_format,
+            [
+                ("A4", "A4", "A4"),
+                ("A3", "A3", "A3"),
+                ("A0", "A0", "A0"),
+                ("Personalizzato", "Custom", "custom"),
+            ],
+        )
         self.combo_orientation = QComboBox()
         self._register_combo(
             self.combo_orientation,
@@ -239,6 +221,24 @@ class SettingsDialog(QDialog):
         lay_format.addWidget(self._label("Posizione Cartiglio:", "Title Block Position:"))
         lay_format.addWidget(self.combo_cartiglio_pos)
 
+        self.lbl_custom_size = self._label(
+            "Dimensione personalizzata foglio (mm):",
+            "Custom paper size (mm):",
+        )
+        lay_format.addWidget(self.lbl_custom_size)
+        custom_size_layout = QHBoxLayout()
+        self.spin_custom_width = QSpinBox()
+        self.spin_custom_width.setRange(50, 5000)
+        self.spin_custom_width.setValue(1200)
+        self.spin_custom_width.setSuffix(" mm")
+        self.spin_custom_height = QSpinBox()
+        self.spin_custom_height.setRange(50, 5000)
+        self.spin_custom_height.setValue(900)
+        self.spin_custom_height.setSuffix(" mm")
+        custom_size_layout.addWidget(self.spin_custom_width)
+        custom_size_layout.addWidget(self.spin_custom_height)
+        lay_format.addLayout(custom_size_layout)
+
         self.lbl_recommendation = QLabel("")
         self.lbl_recommendation.setObjectName("recommendationLabel")
         self.lbl_recommendation.setWordWrap(True)
@@ -246,6 +246,25 @@ class SettingsDialog(QDialog):
 
         grp_format.setLayout(lay_format)
         left_col.addWidget(grp_format)
+
+        grp_scale = self._group("Scala Mappa", "Map Scale")
+        lay_scale = QVBoxLayout()
+        self.chk_auto_scale = self._checkbox("Scala automatica", "Automatic scale")
+        self.chk_auto_scale.setChecked(True)
+        lay_scale.addWidget(self.chk_auto_scale)
+        lay_scale.addWidget(self._label("Scala manuale (denominatore 1:x):", "Manual scale (denominator 1:x):"))
+        self.spin_map_scale = QSpinBox()
+        self.spin_map_scale.setRange(50, 100000000)
+        self.spin_map_scale.setValue(25000)
+        self.spin_map_scale.setSingleStep(500)
+        self.spin_map_scale.setPrefix("1:")
+        lay_scale.addWidget(self.spin_map_scale)
+        self.lbl_scale_note = QLabel("")
+        self.lbl_scale_note.setObjectName("infoSubtle")
+        self.lbl_scale_note.setWordWrap(True)
+        lay_scale.addWidget(self.lbl_scale_note)
+        grp_scale.setLayout(lay_scale)
+        left_col.addWidget(grp_scale)
 
         grp_export = self._group("Contenuto", "Content")
         lay_export = QVBoxLayout()
@@ -298,17 +317,23 @@ class SettingsDialog(QDialog):
         main_layout.addLayout(right_col, stretch=1)
 
         config_tab_layout.addLayout(main_layout)
-        config_tab.setLayout(config_tab_layout)
+        config_content.setLayout(config_tab_layout)
+        config_tab.setWidget(config_content)
         self._add_tab(config_tab, "Configurazione", "Configuration")
+        self._add_tab(self._build_help_tab(), "Help", "Help")
         self._add_tab(self._build_profile_tab(), "Profilo", "Profile")
         self._add_tab(self._build_dashboard_tab(), "Dashboard", "Dashboard")
         self._add_tab(self._build_info_tab(), "Info", "Info")
 
         self.setLayout(outer_layout)
 
-        self.combo_format.currentTextChanged.connect(self._on_layout_changed)
-        self.combo_orientation.currentTextChanged.connect(self._on_layout_changed)
-        self.combo_cartiglio_pos.currentTextChanged.connect(self._on_layout_changed)
+        self.combo_format.currentIndexChanged.connect(self._on_format_changed)
+        self.combo_orientation.currentIndexChanged.connect(self._on_layout_changed)
+        self.combo_cartiglio_pos.currentIndexChanged.connect(self._on_layout_changed)
+        self.spin_custom_width.valueChanged.connect(self._on_layout_changed)
+        self.spin_custom_height.valueChanged.connect(self._on_layout_changed)
+        self.chk_auto_scale.toggled.connect(self._toggle_scale_controls)
+        self.spin_map_scale.valueChanged.connect(self._on_layout_changed)
         self.title_input.textChanged.connect(self._on_layout_changed)
         self.chk_dashboard.toggled.connect(self._toggle_chart_controls)
         self.chk_chart_pie.toggled.connect(self._ensure_one_chart_type)
@@ -326,6 +351,8 @@ class SettingsDialog(QDialog):
         self._populate_chart_fields()
         self._toggle_chart_controls(self.chk_dashboard.isChecked())
         self._apply_initial_optimal_layout()
+        self._toggle_custom_size_controls()
+        self._toggle_scale_controls(self.chk_auto_scale.isChecked())
         self._apply_language()
         self._on_layout_changed()
 
@@ -383,12 +410,137 @@ class SettingsDialog(QDialog):
         self.tabs.addTab(widget, self._tr(italian, english))
         self._tab_specs.append((widget, italian, english))
 
+    def _window_size_button(self, text, direction):
+        button = QToolButton()
+        button.setObjectName("windowSizeButton")
+        arrow_type = getattr(Qt, "LeftArrow" if direction < 0 else "RightArrow", None)
+        if arrow_type is not None:
+            try:
+                button.setArrowType(arrow_type)
+            except Exception:
+                button.setText(text)
+        else:
+            button.setText(text)
+        button.clicked.connect(lambda: self._adjust_window_size(direction))
+        return button
+
+    def _available_window_max_size(self):
+        fallback = QSize(1600, 1100)
+        screen = None
+        try:
+            screen = self.screen()
+        except Exception:
+            screen = None
+        if screen is None:
+            try:
+                window_handle = self.windowHandle()
+                if window_handle:
+                    screen = window_handle.screen()
+            except Exception:
+                screen = None
+        if screen is None:
+            return fallback
+
+        geometry = screen.availableGeometry()
+        return QSize(
+            max(self.minimumWidth(), geometry.width() - 60),
+            max(self.minimumHeight(), geometry.height() - 80),
+        )
+
+    def _adjust_window_size(self, direction):
+        current_size = self.size()
+        max_size = self._available_window_max_size()
+        width = current_size.width() + (self._window_size_step.width() * direction)
+        height = current_size.height() + (self._window_size_step.height() * direction)
+        width = max(self.minimumWidth(), min(max_size.width(), width))
+        height = max(self.minimumHeight(), min(max_size.height(), height))
+        self.resize(width, height)
+        QTimer.singleShot(0, self.update_preview)
+
+    def _set_combo_current_data(self, combo, value):
+        index = combo.findData(value)
+        if index >= 0:
+            combo.setCurrentIndex(index)
+
+    def _current_format(self):
+        return self.combo_format.currentData() or self.combo_format.currentText() or "A4"
+
+    def _is_custom_format(self, fmt=None):
+        return (fmt or self._current_format()) == "custom"
+
+    def _custom_page_size(self):
+        width = float(self.spin_custom_width.value()) if hasattr(self, "spin_custom_width") else 1200.0
+        height = float(self.spin_custom_height.value()) if hasattr(self, "spin_custom_height") else 900.0
+        return width, height
+
+    def _toggle_custom_size_controls(self):
+        enabled = self._is_custom_format() if hasattr(self, "combo_format") else False
+        for control in (
+            getattr(self, "lbl_custom_size", None),
+            getattr(self, "spin_custom_width", None),
+            getattr(self, "spin_custom_height", None),
+        ):
+            if control is not None:
+                control.setEnabled(enabled)
+
+    def _on_format_changed(self, *args):
+        self._toggle_custom_size_controls()
+        self._on_layout_changed()
+
+    def _set_scale_spin_value(self, value):
+        if not value or value <= 0 or not hasattr(self, "spin_map_scale"):
+            return
+        scale_value = int(round(value))
+        scale_value = max(self.spin_map_scale.minimum(), min(self.spin_map_scale.maximum(), scale_value))
+        self.spin_map_scale.blockSignals(True)
+        self.spin_map_scale.setValue(scale_value)
+        self.spin_map_scale.blockSignals(False)
+
+    def _current_scale_value(self, map_width_mm=None):
+        if map_width_mm is None:
+            fmt = self._current_format()
+            orientation = self.combo_orientation.currentData() or "Landscape"
+            cartiglio = self.combo_cartiglio_pos.currentData() or "right"
+            map_width_mm = self._map_space_for(fmt, orientation, cartiglio)[0]
+        if self.chk_auto_scale.isChecked():
+            return self._estimate_scale(map_width_mm)
+        return float(self.spin_map_scale.value())
+
+    def _toggle_scale_controls(self, auto_enabled):
+        self.spin_map_scale.setEnabled(not auto_enabled)
+        if auto_enabled:
+            self._set_scale_spin_value(self._current_scale_value())
+        self._update_scale_note()
+        self.update_preview()
+
+    def _update_scale_note(self):
+        if not hasattr(self, "lbl_scale_note"):
+            return
+        scale_value = self._current_scale_value()
+        scale_text = self._format_scale_value(scale_value) if scale_value else "n/d"
+        if self.chk_auto_scale.isChecked():
+            self.lbl_scale_note.setText(
+                self._tr(
+                    f"Scala calcolata dal riquadro selezionato e dal formato scelto: circa 1:{scale_text}.",
+                    f"Scale calculated from the selected area and paper size: about 1:{scale_text}.",
+                )
+            )
+        else:
+            self.lbl_scale_note.setText(
+                self._tr(
+                    f"La mappa verra esportata alla scala manuale 1:{scale_text}. "
+                    "Se la scala e' troppo piccola, una parte del riquadro puo restare fuori pagina.",
+                    f"The map will be exported at manual scale 1:{scale_text}. "
+                    "If the scale is too small, part of the selected area can fall outside the page.",
+                )
+            )
+
     def _on_language_changed(self, index):
         self.language = self.combo_language.itemData(index) or "it"
         self._apply_language()
 
     def _apply_language(self):
-        self.setWindowTitle(self._tr("Q-Press - Configurazione Avanzata di Stampa", "Q-Press - Advanced Print Setup"))
+        self.setWindowTitle(self._tr("Q-Press - Configurazione Stampa", "Q-Press - Print Setup"))
         for widget in self._translatable_widgets:
             italian, english = widget._qpress_i18n
             if isinstance(widget, QGroupBox):
@@ -405,15 +557,28 @@ class SettingsDialog(QDialog):
             self.lbl_info_details.setText(
                 self._tr(
                     "<b>Autore:</b> Dott. Sarino Alfonso Grande<br/>"
-                    "<b>Versione:</b> 1.8.0<br/>"
-                    "<b>Email:</b> sino.grande@gmail.com",
+                    "<b>Versione:</b> 2.0.0<br/>"
+                    "<b>Email:</b> sino.grande@gmail.com<br/>"
+                    "<b>Sito:</b> <a href='https://sinocloud.it'>"
+                    "sinocloud.it</a>",
                     "<b>Author:</b> Dott. Sarino Alfonso Grande<br/>"
-                    "<b>Version:</b> 1.8.0<br/>"
-                    "<b>Email:</b> sino.grande@gmail.com",
+                    "<b>Version:</b> 2.0.0<br/>"
+                    "<b>Email:</b> sino.grande@gmail.com<br/>"
+                    "<b>Website:</b> <a href='https://sinocloud.it'>"
+                    "sinocloud.it</a>",
                 )
             )
-        if hasattr(self, "plugins_combo"):
-            self.plugins_combo.setItemText(0, self._tr("Seleziona un plugin...", "Select a plugin..."))
+        if hasattr(self, "family_widget"):
+            self.family_widget.set_lang(self.language)
+        if hasattr(self, "btn_window_smaller"):
+            self.btn_window_smaller.setToolTip(
+                self._tr("Riduci la finestra del plugin", "Decrease the plugin window")
+            )
+            self.btn_window_larger.setToolTip(
+                self._tr("Aumenta la finestra del plugin", "Increase the plugin window")
+            )
+        if hasattr(self, "lbl_help_body"):
+            self.lbl_help_body.setText(self._help_html())
         if hasattr(self, "combo_chart_value") and self.combo_chart_value.count() > 0:
             self.combo_chart_value.setItemText(0, self._tr("Conteggio geometrie", "Feature count"))
         if hasattr(self, "title_input"):
@@ -434,9 +599,244 @@ class SettingsDialog(QDialog):
             current = self.chart_subtitle_input.text().strip()
             if current in ("Dati filtrati sull'area selezionata", "Data filtered on the selected area"):
                 self.chart_subtitle_input.setText(
-                    self._tr("Dati filtrati sull'area selezionata", "Data filtered on the selected area"))
+                    self._tr("Dati filtrati sull'area selezionata", "Data filtered on the selected area")
+                )
+        if hasattr(self, "combo_format"):
+            self._toggle_custom_size_controls()
+        if hasattr(self, "lbl_scale_note"):
+            self._update_scale_note()
         self._update_recommendation_label()
         self.update_preview()
+
+    def _help_html(self):
+        return self._tr(
+            """
+            <h2>Guida operativa Q-Press</h2>
+            <h3>Workflow base: tavola PDF</h3>
+            <ol>
+              <li>Attiva in QGIS il layer da usare come riferimento.</li>
+              <li>Premi <b>Q-Press: Area in PDF</b>.</li>
+              <li>Sul canvas tieni premuto <b>Shift</b> e trascina il mouse
+                  per disegnare il riquadro di stampa.</li>
+              <li>Nella scheda <b>Configurazione</b> imposta titolo, logo,
+                  formato, orientamento, cartiglio, scala e cartella output.</li>
+              <li>Premi <b>Genera PDF</b>.</li>
+            </ol>
+
+            <h3>Formato, orientamento e cartiglio</h3>
+            <ul>
+              <li><b>A4, A3, A0</b>: formati pronti con margini e testi
+                  calibrati.</li>
+              <li><b>Personalizzato</b>: abilita larghezza e altezza in mm.
+                  L'orientamento usa il lato lungo in orizzontale o verticale.</li>
+              <li><b>Cartiglio laterale</b>: utile per tavole orizzontali e
+                  mappe con molto spazio laterale.</li>
+              <li><b>Cartiglio inferiore</b>: utile per mappe larghe o quando
+                  si vuole preservare tutta la larghezza della mappa.</li>
+            </ul>
+
+            <h3>Scala mappa</h3>
+            <ul>
+              <li><b>Scala automatica</b>: Q-Press adatta il riquadro scelto
+                  allo spazio mappa disponibile.</li>
+              <li><b>Scala manuale</b>: disattiva la scala automatica e inserisci
+                  il denominatore, ad esempio 5000 per stampare a 1:5000.</li>
+              <li>La scala stampata, la barra grafica e il badge del cartiglio
+                  leggono la scala reale del layout.</li>
+              <li>Se una scala manuale e' troppo grande o troppo piccola, la
+                  vista puo includere piu' territorio o tagliare parte del
+                  riquadro selezionato.</li>
+            </ul>
+
+            <h3>Attributi</h3>
+            <ol>
+              <li>In <b>Contenuto</b> scegli <b>Mappa + Tabella Attributi</b>.</li>
+              <li>Q-Press filtra solo le geometrie del layer attivo che
+                  intersecano davvero il riquadro disegnato.</li>
+              <li>Se gli attributi entrano nel cartiglio viene mostrato un
+                  estratto; se non entrano, viene aggiunta una pagina tabellare.</li>
+            </ol>
+
+            <h3>Dashboard</h3>
+            <ol>
+              <li>Apri la scheda <b>Dashboard</b> e attiva
+                  <b>Genera dashboard</b>.</li>
+              <li>Seleziona uno o piu' <b>campi categoria</b>. Sono i campi
+                  usati per raggruppare le geometrie filtrate nel riquadro.</li>
+              <li>Lascia <b>Conteggio geometrie</b> per contare i record,
+                  oppure scegli un campo numerico e una aggregazione:
+                  somma, media, minimo, massimo o conteggio.</li>
+              <li>Scegli quali grafici produrre: torta, barre e percentuali.</li>
+              <li>Imposta massimo categorie e ordinamento per evitare grafici
+                  troppo fitti.</li>
+              <li>La destinazione puo essere nel cartiglio, in pagine successive
+                  o in entrambe le posizioni.</li>
+            </ol>
+
+            <h3>Profilo topografico</h3>
+            <ol>
+              <li>Apri la scheda <b>Profilo</b> e attiva
+                  <b>Genera profilo topografico</b>.</li>
+              <li>Scegli la sorgente quote:
+                  <b>OpenTopoData online</b> oppure
+                  <b>Genera Profilo da progetto</b>.</li>
+              <li>Per OpenTopoData serve connessione internet. La scheda mostra
+                  quota/stato e una stima delle richieste necessarie.</li>
+              <li>Per il profilo da progetto carica prima un raster DTM/DEM e
+                  selezionalo nel campo <b>Raster DTM/DEM del progetto</b>.</li>
+              <li>Scegli il titolo del profilo: da campo del layer, manuale per
+                  entita o titolo unico.</li>
+              <li>Dopo <b>Genera PDF</b>, Q-Press chiede un secondo
+                  <b>Shift + trascina</b>: traccia la direzione del profilo.</li>
+              <li>Su layer lineari, il profilo usa la linea intercettata dal
+                  secondo tracciamento. Sugli altri layer usa la linea tracciata
+                  o il riquadro come riferimento.</li>
+            </ol>
+
+            <h3>Output e controlli</h3>
+            <ul>
+              <li>Il file viene salvato come <b>qpress_layer_data.pdf</b>
+                  nella cartella scelta.</li>
+              <li>Le immagini temporanee per dashboard e profili vengono
+                  ripulite automaticamente.</li>
+              <li>Se non vedi dati in tabella, verifica layer attivo, CRS e
+                  intersezione reale con il riquadro.</li>
+              <li>Se QGIS non lascia ridimensionare bene il dialogo, usa le
+                  freccette <b>Finestra</b> in alto per ridurlo o aumentarlo.</li>
+              <li>Se il profilo online fallisce per limiti del servizio, usa
+                  un raster DTM/DEM locale.</li>
+            </ul>
+            """,
+            """
+            <h2>Q-Press Operating Guide</h2>
+            <h3>Base workflow: PDF sheet</h3>
+            <ol>
+              <li>Activate the reference layer in QGIS.</li>
+              <li>Press <b>Q-Press: Area to PDF</b>.</li>
+              <li>On the canvas hold <b>Shift</b> and drag the mouse to draw
+                  the print area.</li>
+              <li>In <b>Configuration</b>, set title, logo, paper size,
+                  orientation, title block, scale and output folder.</li>
+              <li>Press <b>Generate PDF</b>.</li>
+            </ol>
+
+            <h3>Paper, orientation and title block</h3>
+            <ul>
+              <li><b>A4, A3, A0</b>: ready-made formats with calibrated margins
+                  and text sizes.</li>
+              <li><b>Custom</b>: enables width and height in mm. Orientation
+                  uses the long side horizontally or vertically.</li>
+              <li><b>Right title block</b>: useful for landscape sheets and maps
+                  with enough side space.</li>
+              <li><b>Bottom title block</b>: useful for wide maps or when the
+                  full map width should be preserved.</li>
+            </ul>
+
+            <h3>Map scale</h3>
+            <ul>
+              <li><b>Automatic scale</b>: Q-Press fits the selected area into
+                  the available map space.</li>
+              <li><b>Manual scale</b>: disable automatic scale and enter the
+                  denominator, for example 5000 for 1:5000.</li>
+              <li>The printed scale, scale bar and title-block badge use the
+                  real layout scale.</li>
+              <li>If the manual scale is too large or too small, the view may
+                  include more territory or crop part of the selected area.</li>
+            </ul>
+
+            <h3>Attributes</h3>
+            <ol>
+              <li>In <b>Content</b>, choose <b>Map + Attribute Table</b>.</li>
+              <li>Q-Press filters only active-layer features that really
+                  intersect the drawn print area.</li>
+              <li>If attributes fit in the title block an excerpt is shown;
+                  otherwise a table page is added.</li>
+            </ol>
+
+            <h3>Dashboard</h3>
+            <ol>
+              <li>Open <b>Dashboard</b> and enable
+                  <b>Generate dashboard</b>.</li>
+              <li>Select one or more <b>category fields</b>. They group the
+                  features filtered by the print area.</li>
+              <li>Keep <b>Feature count</b> to count records, or choose a
+                  numeric field and an aggregation: sum, average, minimum,
+                  maximum or count.</li>
+              <li>Choose the chart types to produce: pie, bar and percentages.</li>
+              <li>Set maximum categories and sorting to avoid crowded charts.</li>
+              <li>Placement can be in the title block, on following pages or in
+                  both places.</li>
+            </ol>
+
+            <h3>Topographic profile</h3>
+            <ol>
+              <li>Open <b>Profile</b> and enable
+                  <b>Generate topographic profile</b>.</li>
+              <li>Choose the elevation source:
+                  <b>Online OpenTopoData</b> or
+                  <b>Generate Profile from project</b>.</li>
+              <li>OpenTopoData needs internet access. The tab shows quota/status
+                  and an estimate of required requests.</li>
+              <li>For project profiles, first load a DTM/DEM raster and select
+                  it in <b>Project DTM/DEM Raster</b>.</li>
+              <li>Choose the profile title: layer field, manual per feature or
+                  single title.</li>
+              <li>After <b>Generate PDF</b>, Q-Press asks for a second
+                  <b>Shift + drag</b>: trace the profile direction.</li>
+              <li>On line layers, the profile uses the line intercepted by the
+                  second trace. On other layers it uses the traced line or the
+                  box as reference.</li>
+            </ol>
+
+            <h3>Output and checks</h3>
+            <ul>
+              <li>The file is saved as <b>qpress_layer_date.pdf</b> in the
+                  selected folder.</li>
+              <li>Temporary dashboard and profile images are cleaned
+                  automatically.</li>
+              <li>If the table is empty, check active layer, CRS and real
+                  intersection with the print area.</li>
+              <li>If QGIS makes the dialog hard to resize, use the top
+                  <b>Window</b> arrows to decrease or increase it.</li>
+              <li>If the online profile fails because of service limits, use a
+                  local DTM/DEM raster.</li>
+            </ul>
+            """,
+        )
+
+    def _build_help_tab(self):
+        help_tab = QWidget()
+        help_layout = QVBoxLayout()
+        help_layout.setContentsMargins(20, 18, 20, 18)
+        help_layout.setSpacing(12)
+
+        title = self._label("Guida", "Help")
+        title.setObjectName("infoTitle")
+        title.setAlignment(Qt.AlignCenter)
+        help_layout.addWidget(title)
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        frame_shape = QFrame.Shape.NoFrame if hasattr(QFrame, "Shape") else QFrame.NoFrame
+        scroll_area.setFrameShape(frame_shape)
+
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout()
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.lbl_help_body = QLabel()
+        self.lbl_help_body.setTextFormat(Qt.RichText)
+        self.lbl_help_body.setWordWrap(True)
+        self.lbl_help_body.setObjectName("infoSubtle")
+        self.lbl_help_body.setOpenExternalLinks(False)
+        scroll_layout.addWidget(self.lbl_help_body)
+        scroll_layout.addStretch()
+        scroll_content.setLayout(scroll_layout)
+        scroll_area.setWidget(scroll_content)
+        help_layout.addWidget(scroll_area)
+        help_layout.addStretch()
+        help_tab.setLayout(help_layout)
+        return help_tab
 
     def _build_profile_tab(self):
         profile_tab = QWidget()
@@ -521,8 +921,9 @@ class SettingsDialog(QDialog):
         grp_dashboard = self._group("Opzioni Dashboard Grafici", "Chart Dashboard Options")
         lay_dashboard = QVBoxLayout()
 
-        self.chk_dashboard = self._checkbox("Genera dashboard (torta, barre, percentuali)",
-                                            "Generate dashboard (pie, bar, percentages)")
+        self.chk_dashboard = self._checkbox(
+            "Genera dashboard (torta, barre, percentuali)", "Generate dashboard (pie, bar, percentages)"
+        )
         self.chk_dashboard.setChecked(False)
         lay_dashboard.addWidget(self.chk_dashboard)
 
@@ -627,9 +1028,7 @@ class SettingsDialog(QDialog):
         sarino_logo = self._resource_path("sarino_logo.jpg")
         if os.path.exists(sarino_logo):
             pixmap = QPixmap(sarino_logo)
-            logo_label.setPixmap(
-                pixmap.scaled(420, 260, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            )
+            logo_label.setPixmap(pixmap.scaled(420, 260, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         info_layout.addWidget(logo_label)
 
         self.lbl_info_details = QLabel()
@@ -637,44 +1036,14 @@ class SettingsDialog(QDialog):
         self.lbl_info_details.setTextFormat(Qt.RichText)
         info_layout.addWidget(self.lbl_info_details)
 
-        info_layout.addWidget(self._label("Plugin collegati:", "Linked Plugins:"))
-
-        self.plugins_combo = QComboBox()
-        self.plugins_combo.addItem(self._tr("Seleziona un plugin...", "Select a plugin..."))
-
-        plugin_entries = [
-            ("QGIS_ledger", "qgis_ledger_logo.jpg", "https://plugins.qgis.org/plugins/crs/"),
-            ("GeoCSV Mapper", "geocsv_logo.svg", "https://plugins.qgis.org/plugins/csv_importer_plugin/"),
-            ("Quick CRS Fixer", "quick_crs_fixer_logo.png", "https://plugins.qgis.org/plugins/crs/"),
-        ]
-        for label, icon_name, url in plugin_entries:
-            icon_path = self._resource_path(icon_name)
-            if os.path.exists(icon_path):
-                self.plugins_combo.addItem(QIcon(icon_path), label, url)
-            else:
-                self.plugins_combo.addItem(label, url)
-
-        self.plugins_combo.currentIndexChanged.connect(self.open_plugin_link)
-        info_layout.addWidget(self.plugins_combo)
-
-        subtle = self._label(
-            "La selezione apre la pagina ufficiale del plugin nello store QGIS.",
-            "The selection opens the official plugin page in the QGIS plugin store.",
+        self.family_widget = plugin_hub.make_family_widget(
+            "q_press", lang=self.language
         )
-        subtle.setObjectName("infoSubtle")
-        subtle.setAlignment(Qt.AlignCenter)
-        subtle.setWordWrap(True)
-        info_layout.addWidget(subtle)
+        info_layout.addWidget(self.family_widget)
 
         info_layout.addStretch()
         info_tab.setLayout(info_layout)
         return info_tab
-
-    def open_plugin_link(self, index):
-        url = self.plugins_combo.itemData(index)
-        if url:
-            QDesktopServices.openUrl(QUrl(url))
-            self.plugins_combo.setCurrentIndex(0)
 
     def _selection_rect_for_layer(self):
         if not self.layer or not self.selection_extent or self.selection_extent.isEmpty():
@@ -731,9 +1100,7 @@ class SettingsDialog(QDialog):
     def _populate_topo_rasters(self):
         self.combo_topo_raster.clear()
         raster_layers = [
-            layer
-            for layer in QgsProject.instance().mapLayers().values()
-            if layer.type() == QgsMapLayerType.RasterLayer
+            layer for layer in QgsProject.instance().mapLayers().values() if layer.type() == QgsMapLayerType.RasterLayer
         ]
         if not raster_layers:
             self.combo_topo_raster.addItem(self._tr("Nessun raster nel progetto", "No raster in project"), "")
@@ -1006,12 +1373,30 @@ class SettingsDialog(QDialog):
 
     def _get_page_dimensions(self, fmt, orientation_label):
         formats = {"A4": (297.0, 210.0), "A3": (420.0, 297.0), "A0": (1189.0, 841.0)}
-        page_w, page_h = formats.get(fmt, (297.0, 210.0))
-        is_landscape = orientation_label == "Landscape" or "Landscape" in str(
-            orientation_label) or "Orizzontale" in str(orientation_label)
-        return (page_w, page_h) if is_landscape else (page_h, page_w)
+        if self._is_custom_format(fmt):
+            custom_w, custom_h = self._custom_page_size()
+            page_w, page_h = max(custom_w, 50.0), max(custom_h, 50.0)
+        else:
+            page_w, page_h = formats.get(fmt, (297.0, 210.0))
+        is_landscape = any((
+            orientation_label == "Landscape",
+            "Landscape" in str(orientation_label),
+            "Orizzontale" in str(orientation_label),
+        ))
+        long_side = max(page_w, page_h)
+        short_side = min(page_w, page_h)
+        return (long_side, short_side) if is_landscape else (short_side, long_side)
 
     def _get_layout_metrics(self, fmt):
+        if self._is_custom_format(fmt):
+            page_w, page_h = self._get_page_dimensions(fmt, self.combo_orientation.currentData() or "Landscape")
+            long_side = max(page_w, page_h)
+            if long_side >= 841.0:
+                fmt = "A0"
+            elif long_side >= 420.0:
+                fmt = "A3"
+            else:
+                fmt = "A4"
         if fmt == "A0":
             return {"margin": 20.0, "gap": 6.0, "panel": 400.0, "panel_bottom": 230.0}
         if fmt == "A3":
@@ -1096,6 +1481,45 @@ class SettingsDialog(QDialog):
             return None
         return width_m / (map_width_mm / 1000.0)
 
+    def _map_width_units_for_scale(self, scale_value, map_width_mm):
+        if not scale_value or map_width_mm <= 0:
+            return None
+        target_width_m = scale_value * (map_width_mm / 1000.0)
+        try:
+            unit = self.map_settings.mapUnits() if self.map_settings else QgsUnitTypes.DistanceUnknownUnit
+        except Exception:
+            unit = QgsUnitTypes.DistanceUnknownUnit
+
+        if unit == QgsUnitTypes.DistanceDegrees:
+            lat = (self.selection_extent.yMinimum() + self.selection_extent.yMaximum()) / 2.0
+            meters_per_degree = 111320.0 * max(math.cos(math.radians(lat)), 0.01)
+            return target_width_m / meters_per_degree
+
+        try:
+            factor = QgsUnitTypes.fromUnitToUnitFactor(unit, QgsUnitTypes.DistanceMeters)
+            if factor > 0:
+                return target_width_m / factor
+        except Exception:
+            pass
+        return target_width_m
+
+    def _preview_extent_for_scale(self, map_width_mm, map_height_mm):
+        if self.chk_auto_scale.isChecked() or not self.selection_extent or self.selection_extent.isEmpty():
+            return self.selection_extent
+        target_width = self._map_width_units_for_scale(self.spin_map_scale.value(), map_width_mm)
+        if not target_width:
+            return self.selection_extent
+        aspect = max(map_width_mm / max(map_height_mm, 1.0), 0.01)
+        target_height = target_width / aspect
+        cx = (self.selection_extent.xMinimum() + self.selection_extent.xMaximum()) / 2.0
+        cy = (self.selection_extent.yMinimum() + self.selection_extent.yMaximum()) / 2.0
+        return QgsRectangle(
+            cx - (target_width / 2.0),
+            cy - (target_height / 2.0),
+            cx + (target_width / 2.0),
+            cy + (target_height / 2.0),
+        )
+
     def _recommend_layout(self):
         extent_aspect = self._extent_aspect()
         best = None
@@ -1158,13 +1582,9 @@ class SettingsDialog(QDialog):
             return
         self._recommended_layout = recommendation
         self._updating_layout = True
-        self.combo_format.setCurrentText(recommendation["format"])
-        orientation_index = self.combo_orientation.findData(recommendation["orientation"])
-        if orientation_index >= 0:
-            self.combo_orientation.setCurrentIndex(orientation_index)
-        cartiglio_index = self.combo_cartiglio_pos.findData(recommendation["cartiglio_pos"])
-        if cartiglio_index >= 0:
-            self.combo_cartiglio_pos.setCurrentIndex(cartiglio_index)
+        self._set_combo_current_data(self.combo_format, recommendation["format"])
+        self._set_combo_current_data(self.combo_orientation, recommendation["orientation"])
+        self._set_combo_current_data(self.combo_cartiglio_pos, recommendation["cartiglio_pos"])
         self._updating_layout = False
 
     def _format_scale_value(self, scale_value):
@@ -1193,30 +1613,39 @@ class SettingsDialog(QDialog):
             )
             return
 
-        current_fmt = self.combo_format.currentText()
+        current_fmt = self._current_format()
         current_ori = self.combo_orientation.currentData() or "Landscape"
         current_cart = self.combo_cartiglio_pos.currentData() or "right"
         current_scale = self._estimate_scale(self._map_space_for(current_fmt, current_ori, current_cart)[0])
         current_scale_txt = self._format_scale_value(current_scale) if current_scale else "n/d"
         rec_scale_txt = (
-            self._format_scale_value(recommendation["estimated_scale"])
-            if recommendation["estimated_scale"]
-            else "n/d"
+            self._format_scale_value(recommendation["estimated_scale"]) if recommendation["estimated_scale"] else "n/d"
         )
 
-        is_current_recommended = (
-            current_fmt == recommendation["format"]
-            and current_ori == recommendation["orientation"]
-            and current_cart == recommendation["cartiglio_pos"]
-        )
+        if self._is_custom_format(current_fmt):
+            custom_w, custom_h = self._custom_page_size()
+            self.lbl_recommendation.setText(
+                self._tr(
+                    f"Formato personalizzato attivo: {int(custom_w)} x {int(custom_h)} mm.\n"
+                    f"Scala stimata con il riquadro attuale: 1:{current_scale_txt}",
+                    f"Custom paper active: {int(custom_w)} x {int(custom_h)} mm.\n"
+                    f"Estimated scale for the current area: 1:{current_scale_txt}",
+                )
+            )
+            return
+
+        is_current_recommended = all((
+            current_fmt == recommendation["format"],
+            current_ori == recommendation["orientation"],
+            current_cart == recommendation["cartiglio_pos"],
+        ))
 
         if is_current_recommended:
             self.lbl_recommendation.setText(
                 self._tr(
                     "Formato ottimizzato applicato automaticamente.\n"
                     f"Scala stimata in stampa: 1:{current_scale_txt}",
-                    "Optimized format applied automatically.\n"
-                    f"Estimated print scale: 1:{current_scale_txt}",
+                    "Optimized format applied automatically.\n" f"Estimated print scale: 1:{current_scale_txt}",
                 )
             )
         else:
@@ -1234,7 +1663,16 @@ class SettingsDialog(QDialog):
             )
 
     def _title_font_for_preview(self):
-        fmt = self.combo_format.currentText()
+        fmt = self._current_format()
+        if self._is_custom_format(fmt):
+            page_w, page_h = self._get_page_dimensions(fmt, self.combo_orientation.currentData() or "Landscape")
+            long_side = max(page_w, page_h)
+            if long_side >= 841.0:
+                fmt = "A0"
+            elif long_side >= 420.0:
+                fmt = "A3"
+            else:
+                fmt = "A4"
         base = {"A4": 8, "A3": 11, "A0": 14}.get(fmt, 8)
         title_len = len(self.title_input.text().strip())
         if title_len > 36:
@@ -1243,8 +1681,9 @@ class SettingsDialog(QDialog):
             base -= 1
         return max(base, 6)
 
-    def _render_map_preview_image(self, width, height):
-        if not self.map_settings or not self.selection_extent or self.selection_extent.isEmpty():
+    def _render_map_preview_image(self, width, height, extent=None):
+        render_extent = extent or self.selection_extent
+        if not self.map_settings or not render_extent or render_extent.isEmpty():
             return None
 
         try:
@@ -1254,7 +1693,7 @@ class SettingsDialog(QDialog):
                 return None
 
             settings.setLayers(layers)
-            settings.setExtent(self.selection_extent)
+            settings.setExtent(render_extent)
             settings.setOutputSize(QSize(max(int(width), 32), max(int(height), 32)))
             settings.setBackgroundColor(QColor("#FBFDF8"))
 
@@ -1282,7 +1721,8 @@ class SettingsDialog(QDialog):
             return None
 
     def update_preview(self):
-        fmt = self.combo_format.currentText()
+        fmt = self._current_format()
+        fmt_label = self.combo_format.currentText()
         geometry = self._layout_geometry(
             fmt,
             self.combo_orientation.currentData() or "Landscape",
@@ -1348,10 +1788,27 @@ class SettingsDialog(QDialog):
             scale_label = self._tr("SCALA APPLICATA", "APPLIED SCALE")
             scale_number = f"1:{self._format_scale_value(scale_value)}" if scale_value else "1:n/d"
             if text_area.height() >= 16:
-                draw_text(scale_label, QRectF(text_area.left(), text_area.top(), text_area.width(),
-                          text_area.height() * 0.45), 5, True, Qt.AlignLeft | Qt.AlignVCenter, QColor("#475569"))
-                draw_text(scale_number, QRectF(text_area.left(), text_area.top() + text_area.height() * 0.38,
-                          text_area.width(), text_area.height() * 0.62), 8, True, Qt.AlignLeft | Qt.AlignVCenter, QColor("#111827"))  # noqa: E501
+                draw_text(
+                    scale_label,
+                    QRectF(text_area.left(), text_area.top(), text_area.width(), text_area.height() * 0.45),
+                    5,
+                    True,
+                    Qt.AlignLeft | Qt.AlignVCenter,
+                    QColor("#475569"),
+                )
+                draw_text(
+                    scale_number,
+                    QRectF(
+                        text_area.left(),
+                        text_area.top() + text_area.height() * 0.38,
+                        text_area.width(),
+                        text_area.height() * 0.62,
+                    ),
+                    8,
+                    True,
+                    Qt.AlignLeft | Qt.AlignVCenter,
+                    QColor("#111827"),
+                )  # noqa: E501
             else:
                 draw_text(scale_number, text_area, 7, True, Qt.AlignLeft | Qt.AlignVCenter, QColor("#111827"))
 
@@ -1361,7 +1818,7 @@ class SettingsDialog(QDialog):
             exponent = math.floor(math.log10(value))
             for exp in range(exponent + 1, exponent - 4, -1):
                 for base in (5.0, 2.0, 1.0):
-                    candidate = base * (10 ** exp)
+                    candidate = base * (10**exp)
                     if candidate <= value:
                         return max(candidate, 1.0)
             return 1.0
@@ -1390,7 +1847,8 @@ class SettingsDialog(QDialog):
         painter.setPen(QPen(QColor("#111827"), 1.0))
         painter.drawRect(map_rect)
 
-        map_image = self._render_map_preview_image(map_rect.width(), map_rect.height())
+        preview_extent = self._preview_extent_for_scale(geometry["map_w"], geometry["map_h"])
+        map_image = self._render_map_preview_image(map_rect.width(), map_rect.height(), preview_extent)
         if map_image:
             painter.drawImage(map_rect.toRect(), map_image)
             painter.setPen(QPen(QColor("#111827"), 1.0))
@@ -1451,11 +1909,12 @@ class SettingsDialog(QDialog):
                 ]
             )
         )
-        draw_text("N", QRectF(north_box.left(), north_box.bottom() -
-                  13, north_box.width(), 10), 7, True, Qt.AlignCenter)
+        draw_text(
+            "N", QRectF(north_box.left(), north_box.bottom() - 13, north_box.width(), 10), 7, True, Qt.AlignCenter
+        )
 
         scale_w_mm = min(70.0, geometry["map_w"] * 0.30)
-        scale_est = self._estimate_scale(geometry["map_w"])
+        scale_est = self._current_scale_value(geometry["map_w"])
         ground_m = nice_floor((scale_est or 25000.0) * (scale_w_mm / 1000.0))
         unit = "m"
         shown_value = ground_m
@@ -1472,16 +1931,26 @@ class SettingsDialog(QDialog):
         painter.setPen(QPen(QColor("#111827"), 0.9))
         painter.drawRect(scale_box)
         segment_w = (scale_box.width() - 10.0) / 4.0
-        draw_text(f"{self._tr('Scala', 'Scale')} 1:{self._format_scale_value(scale_est or 0)}", QRectF(
-            scale_box.left() + 4, scale_box.top() + 2, scale_box.width() - 8, 7), 6, True, Qt.AlignCenter)
+        draw_text(
+            f"{self._tr('Scala', 'Scale')} 1:{self._format_scale_value(scale_est or 0)}",
+            QRectF(scale_box.left() + 4, scale_box.top() + 2, scale_box.width() - 8, 7),
+            6,
+            True,
+            Qt.AlignCenter,
+        )
         bar_y = scale_box.top() + 11
         for idx in range(4):
             segment = QRectF(scale_box.left() + 5 + (idx * segment_w), bar_y, segment_w, 5)
             painter.fillRect(segment, QColor("#111827") if idx % 2 == 0 else QColor("#FFFFFF"))
             painter.drawRect(segment)
         label = f"0 - {shown_value:g} {unit}"
-        draw_text(label, QRectF(scale_box.left() + 4, scale_box.top() +
-                  16, scale_box.width() - 8, 7), 6, False, Qt.AlignCenter)
+        draw_text(
+            label,
+            QRectF(scale_box.left() + 4, scale_box.top() + 16, scale_box.width() - 8, 7),
+            6,
+            False,
+            Qt.AlignCenter,
+        )
 
         panel_rect = rect(
             geometry["panel_x"],
@@ -1496,8 +1965,8 @@ class SettingsDialog(QDialog):
         title_preview = self.title_input.text().strip().upper() or "TAVOLA CARTOGRAFICA"
         layer_name = self.layer.name() if self.layer else "Layer attivo"
         meta = self._tr(
-            f"{layer_name}\nCRS progetto\nFormato {fmt}",
-            f"{layer_name}\nProject CRS\nFormat {fmt}",
+            f"{layer_name}\nCRS progetto\nFormato {fmt_label}",
+            f"{layer_name}\nProject CRS\nFormat {fmt_label}",
         )
 
         logo_path = self.logo_input.text().strip()
@@ -1512,8 +1981,9 @@ class SettingsDialog(QDialog):
                 info_w,
                 panel_rect.height(),
             )
-            legend_rect = QRectF(info_rect.right(), panel_rect.top(), panel_rect.right() -
-                                 info_rect.right(), panel_rect.height())
+            legend_rect = QRectF(
+                info_rect.right(), panel_rect.top(), panel_rect.right() - info_rect.right(), panel_rect.height()
+            )
             if has_logo:
                 painter.drawLine(
                     QPointF(logo_rect.right(), panel_rect.top()),
@@ -1524,12 +1994,21 @@ class SettingsDialog(QDialog):
                 QPointF(info_rect.right(), panel_rect.top()),
                 QPointF(info_rect.right(), panel_rect.bottom()),
             )
-            title_rect = QRectF(info_rect.left() + 5, info_rect.top() + 4,
-                                info_rect.width() - 10, info_rect.height() * 0.25)
-            scale_rect = QRectF(info_rect.left() + 5, title_rect.bottom() + 3,
-                                info_rect.width() - 10, max(info_rect.height() * 0.18, 15))
-            meta_rect = QRectF(info_rect.left() + 6, scale_rect.bottom() + 3, info_rect.width() -
-                               12, max(info_rect.bottom() - scale_rect.bottom() - 7, 8))
+            title_rect = QRectF(
+                info_rect.left() + 5, info_rect.top() + 4, info_rect.width() - 10, info_rect.height() * 0.25
+            )
+            scale_rect = QRectF(
+                info_rect.left() + 5,
+                title_rect.bottom() + 3,
+                info_rect.width() - 10,
+                max(info_rect.height() * 0.18, 15),
+            )
+            meta_rect = QRectF(
+                info_rect.left() + 6,
+                scale_rect.bottom() + 3,
+                info_rect.width() - 12,
+                max(info_rect.bottom() - scale_rect.bottom() - 7, 8),
+            )
             draw_text(title_preview, title_rect, self._title_font_for_preview(), True, Qt.AlignCenter)
             draw_scale_badge(scale_rect, scale_est)
             draw_text(meta, meta_rect, 7, False, Qt.AlignLeft | Qt.AlignTop, QColor("#1F2937"))
@@ -1545,18 +2024,28 @@ class SettingsDialog(QDialog):
                 cursor_top = logo_rect.bottom()
             info_h = panel_rect.height() * (0.35 if has_logo else 0.32)
             info_rect = QRectF(panel_rect.left(), cursor_top, panel_rect.width(), info_h)
-            legend_rect = QRectF(panel_rect.left(), info_rect.bottom(), panel_rect.width(),
-                                 panel_rect.bottom() - info_rect.bottom())
+            legend_rect = QRectF(
+                panel_rect.left(), info_rect.bottom(), panel_rect.width(), panel_rect.bottom() - info_rect.bottom()
+            )
             painter.drawLine(
                 QPointF(panel_rect.left(), info_rect.bottom()),
                 QPointF(panel_rect.right(), info_rect.bottom()),
             )
-            title_rect = QRectF(info_rect.left() + 6, info_rect.top() + 4,
-                                info_rect.width() - 12, info_rect.height() * 0.25)
-            scale_rect = QRectF(info_rect.left() + 7, title_rect.bottom() + 3,
-                                info_rect.width() - 14, max(info_rect.height() * 0.20, 16))
-            meta_rect = QRectF(info_rect.left() + 7, scale_rect.bottom() + 3,
-                               info_rect.width() - 14, max(info_rect.bottom() - scale_rect.bottom() - 7, 8))
+            title_rect = QRectF(
+                info_rect.left() + 6, info_rect.top() + 4, info_rect.width() - 12, info_rect.height() * 0.25
+            )
+            scale_rect = QRectF(
+                info_rect.left() + 7,
+                title_rect.bottom() + 3,
+                info_rect.width() - 14,
+                max(info_rect.height() * 0.20, 16),
+            )
+            meta_rect = QRectF(
+                info_rect.left() + 7,
+                scale_rect.bottom() + 3,
+                info_rect.width() - 14,
+                max(info_rect.bottom() - scale_rect.bottom() - 7, 8),
+            )
             draw_text(title_preview, title_rect, self._title_font_for_preview(), True, Qt.AlignCenter)
             draw_scale_badge(scale_rect, scale_est)
             draw_text(meta, meta_rect, 7, False, Qt.AlignLeft | Qt.AlignTop, QColor("#1F2937"))
@@ -1583,6 +2072,7 @@ class SettingsDialog(QDialog):
         if self._updating_layout:
             return
         self._update_recommendation_label()
+        self._update_scale_note()
         self.update_preview()
 
     def get_settings(self):
@@ -1596,9 +2086,14 @@ class SettingsDialog(QDialog):
         return {
             "title": self.title_input.text().strip(),
             "logo": self.logo_input.text().strip(),
-            "format": self.combo_format.currentText(),
+            "format": self._current_format(),
+            "format_label": self.combo_format.currentText(),
             "orientation": self.combo_orientation.currentData() or "Landscape",
             "cartiglio_pos": self.combo_cartiglio_pos.currentData() or "right",
+            "custom_page_width_mm": self.spin_custom_width.value(),
+            "custom_page_height_mm": self.spin_custom_height.value(),
+            "scale_mode": "auto" if self.chk_auto_scale.isChecked() else "manual",
+            "map_scale": self.spin_map_scale.value(),
             "export_attributes": self.radio_map_attr.isChecked(),
             "topo_profile": self.chk_topo_profile.isChecked(),
             "topo_profile_title_mode": self.combo_topo_title_mode.currentData() or "field",

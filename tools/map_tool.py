@@ -1,15 +1,11 @@
 import traceback
-from qgis.core import (
-    QgsRectangle,
-    QgsGeometry,
-    Qgis
-)
-from qgis.gui import (
-    QgsMapTool,
-    QgsRubberBand
-)
+from qgis.core import QgsRectangle, QgsGeometry, Qgis
+from qgis.gui import QgsMapTool, QgsRubberBand
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
+from ..qt_compat import ensure_qt_compat
+
+ensure_qt_compat(Qt)
 
 
 class QpressMapTool(QgsMapTool):

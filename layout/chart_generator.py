@@ -4,7 +4,12 @@ from datetime import datetime
 
 from qgis.PyQt.QtCore import QRectF, Qt
 from qgis.PyQt.QtGui import QColor, QFont, QFontMetricsF, QImage, QPainter, QPen, QBrush
+from ..qt_compat import ensure_qfont_compat, ensure_qimage_compat, ensure_qpainter_compat, ensure_qt_compat
 
+ensure_qt_compat(Qt)
+ensure_qfont_compat(QFont)
+ensure_qimage_compat(QImage)
+ensure_qpainter_compat(QPainter)
 
 PALETTE = [
     QColor(30, 64, 175),
@@ -51,7 +56,8 @@ def _truncate(text, max_chars=28):
 
 
 def _format_number(value, decimals=2):
-    return f"{value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{
+        value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def _text_width(metrics, text):
@@ -61,7 +67,9 @@ def _text_width(metrics, text):
         return metrics.width(text)
 
 
-def _draw_fitted_text(painter, rect, text, size, bold=False, color=None, align=Qt.AlignLeft | Qt.AlignVCenter, min_size=8):  # noqa: E501
+def _draw_fitted_text(
+    painter, rect, text, size, bold=False, color=None, align=Qt.AlignLeft | Qt.AlignVCenter, min_size=8
+):  # noqa: E501
     weight = QFont.Bold if bold else QFont.Normal
     raw = str(text or "")
     for font_size in range(int(size), int(min_size) - 1, -1):
@@ -173,15 +181,17 @@ def _base_canvas(title, subtitle, field_label, width=1800, height=1200, language
     painter.setPen(QPen(ink, 1))
     painter.drawRect(38, 38, width - 76, height - 76)
 
-    _draw_fitted_text(painter, QRectF(70, 58, width - 140, 52), title,
-                      28, True, ink, Qt.AlignLeft | Qt.AlignVCenter, 18)
+    _draw_fitted_text(
+        painter, QRectF(70, 58, width - 140, 52), title, 28, True, ink, Qt.AlignLeft | Qt.AlignVCenter, 18
+    )
     subtitle_text = subtitle or _text(
         language,
         "Distribuzione statistica sulle sole geometrie presenti nell'area selezionata",
         "Statistical distribution using only features inside the selected area",
     )
-    _draw_fitted_text(painter, QRectF(70, 110, width - 140, 34), subtitle_text,
-                      14, False, muted, Qt.AlignLeft | Qt.AlignVCenter, 10)
+    _draw_fitted_text(
+        painter, QRectF(70, 110, width - 140, 34), subtitle_text, 14, False, muted, Qt.AlignLeft | Qt.AlignVCenter, 10
+    )
     painter.setPen(QPen(ink, 1))
     painter.drawLine(70, 158, width - 70, 158)
 
@@ -200,7 +210,9 @@ def _base_canvas(title, subtitle, field_label, width=1800, height=1200, language
 
 def _save(image, output_dir, chart_type, layer_name, field_name):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"qpress_dashboard_{_slug(layer_name)}_{_slug(field_name)}_{chart_type}_{timestamp}.png"
+    filename = f"qpress_dashboard_{
+        _slug(layer_name)}_{
+        _slug(field_name)}_{chart_type}_{timestamp}.png"
     path = os.path.join(output_dir, filename)
     image.save(path, "PNG")
     return path
@@ -208,11 +220,16 @@ def _save(image, output_dir, chart_type, layer_name, field_name):
 
 def _legend_text(label, value, total, show_percentages):
     if show_percentages and total > 0:
-        return f"{_truncate(label, 32)}  {_format_number(value)}  ({(value / total) * 100:.1f}%)"
+        percent = (value / total) * 100
+        label_text = _truncate(label, 32)
+        value_text = _format_number(value)
+        return f"{label_text}  {value_text}  ({percent:.1f}%)"
     return f"{_truncate(label, 32)}  {_format_number(value)}"
 
 
-def _render_pie(rows, total, layer_name, output_dir, field_name, title, subtitle, show_labels, show_percentages, language="it"):  # noqa: E501
+def _render_pie(
+    rows, total, layer_name, output_dir, field_name, title, subtitle, show_labels, show_percentages, language="it"
+):  # noqa: E501
     image, painter = _base_canvas(title, subtitle, field_name, language=language)
 
     pie_rect = QRectF(120, 245, 640, 640)
@@ -228,10 +245,19 @@ def _render_pie(rows, total, layer_name, output_dir, field_name, title, subtitle
     painter.setBrush(QBrush(QColor(255, 255, 255)))
     painter.setPen(QPen(QColor(255, 255, 255), 1))
     painter.drawEllipse(QRectF(315, 440, 250, 250))
-    _draw_fitted_text(painter, QRectF(315, 500, 250, 44), _text(language, "Totale",
-                      "Total"), 16, True, QColor(17, 24, 39), Qt.AlignCenter, 11)
-    _draw_fitted_text(painter, QRectF(315, 546, 250, 50), _format_number(
-        total), 20, True, QColor(17, 24, 39), Qt.AlignCenter, 12)
+    _draw_fitted_text(
+        painter,
+        QRectF(315, 500, 250, 44),
+        _text(language, "Totale", "Total"),
+        16,
+        True,
+        QColor(17, 24, 39),
+        Qt.AlignCenter,
+        11,
+    )
+    _draw_fitted_text(
+        painter, QRectF(315, 546, 250, 50), _format_number(total), 20, True, QColor(17, 24, 39), Qt.AlignCenter, 12
+    )
 
     legend_x = 850
     for idx, (label, value) in enumerate(rows):
@@ -241,8 +267,16 @@ def _render_pie(rows, total, layer_name, output_dir, field_name, title, subtitle
         painter.setPen(QPen(QColor(17, 24, 39), 1))
         painter.drawRect(legend_x, y, 28, 28)
         text = _legend_text(label, value, total, show_percentages)
-        _draw_fitted_text(painter, QRectF(legend_x + 44, y - 2, 820, 34), text, 15,
-                          False, QColor(17, 24, 39), Qt.AlignLeft | Qt.AlignVCenter, 10)
+        _draw_fitted_text(
+            painter,
+            QRectF(legend_x + 44, y - 2, 820, 34),
+            text,
+            15,
+            False,
+            QColor(17, 24, 39),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            10,
+        )
 
     if show_labels:
         _draw_fitted_text(
@@ -264,7 +298,9 @@ def _render_pie(rows, total, layer_name, output_dir, field_name, title, subtitle
     return _save(image, output_dir, "pie", layer_name, field_name)
 
 
-def _render_bar(rows, total, layer_name, output_dir, field_name, title, subtitle, show_labels, show_percentages, language="it"):  # noqa: E501
+def _render_bar(
+    rows, total, layer_name, output_dir, field_name, title, subtitle, show_labels, show_percentages, language="it"
+):  # noqa: E501
     del show_labels
     image, painter = _base_canvas(title, subtitle, field_name, language=language)
 
@@ -280,16 +316,25 @@ def _render_bar(rows, total, layer_name, output_dir, field_name, title, subtitle
         if y > 1030:
             break
         painter.setPen(QPen(QColor(17, 24, 39), 1))
-        _draw_fitted_text(painter, QRectF(90, y, 300, 34), label, 13, False,
-                          QColor(17, 24, 39), Qt.AlignRight | Qt.AlignVCenter, 9)
+        _draw_fitted_text(
+            painter, QRectF(90, y, 300, 34), label, 13, False, QColor(17, 24, 39), Qt.AlignRight | Qt.AlignVCenter, 9
+        )
         painter.drawRect(chart_x, y + 5, chart_w, 28)
         fill_w = (value / max_value) * chart_w
         painter.fillRect(QRectF(chart_x, y + 5, fill_w, 28), PALETTE[idx % len(PALETTE)])
         value_text = _format_number(value)
         if show_percentages and total > 0:
             value_text = f"{value_text} ({(value / total) * 100:.1f}%)"
-        _draw_fitted_text(painter, QRectF(chart_x + chart_w + 18, y, 170, 34), value_text,
-                          13, False, QColor(17, 24, 39), Qt.AlignLeft | Qt.AlignVCenter, 9)
+        _draw_fitted_text(
+            painter,
+            QRectF(chart_x + chart_w + 18, y, 170, 34),
+            value_text,
+            13,
+            False,
+            QColor(17, 24, 39),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            9,
+        )
 
     painter.end()
     return _save(image, output_dir, "bar", layer_name, field_name)
@@ -309,8 +354,9 @@ def _render_percent(rows, total, layer_name, output_dir, field_name, title, subt
             break
         pct = 0 if total <= 0 else (value / total) * 100
         painter.setPen(QPen(QColor(17, 24, 39), 1))
-        _draw_fitted_text(painter, QRectF(left, y, 340, 34), label, 14, False,
-                          QColor(17, 24, 39), Qt.AlignLeft | Qt.AlignVCenter, 9)
+        _draw_fitted_text(
+            painter, QRectF(left, y, 340, 34), label, 14, False, QColor(17, 24, 39), Qt.AlignLeft | Qt.AlignVCenter, 9
+        )
         painter.drawRect(int(left + 380), int(y + 5), int(bar_w), 28)
         fill_w = max(0, min(bar_w, (pct / 100.0) * bar_w))
         painter.fillRect(QRectF(left + 380, y + 5, fill_w, 28), PALETTE[idx % len(PALETTE)])

@@ -1,15 +1,21 @@
 [general]
 name=Q-Press
 qgisMinimumVersion=3.16
-description=Professional cartographic PDF generator. Use Shift+Drag to select an area and export a comprehensive map with layout, filtered attributes, charts, and topographic profiles from OpenTopoData or local DEM.
-about=Q-Press allows you to select an area directly from the QGIS canvas using Shift+Drag and instantly generate a professional cartographic PDF. The output includes a technical title block, coherent scale, coordinate grids, legend, overview map, filtered attribute tables, statistical dashboards, and a single-line topographic profile from OpenTopoData or a project DTM/DEM raster.
-version=1.8.1
+qgisMaximumVersion=4.99
+description=Professional cartographic PDF generator for QGIS 4/Qt6. Use Shift+Drag to select an area and export a comprehensive map with automatic or manual scale, custom paper size, filtered attributes, charts, and topographic profiles.
+about=Q-Press allows you to select an area directly from the QGIS canvas using Shift+Drag and instantly generate a professional cartographic PDF. The output includes a technical title block, automatic or manual scale, custom paper size, coordinate grids, legend, overview map, filtered attribute tables, statistical dashboards, and a single-line topographic profile from OpenTopoData or a project DTM/DEM raster.
+version=2.0.0
 author=Dott. Sarino Alfonso Grande
 email=sino.grande@gmail.com
-tracker=https://github.com/qgis/QGIS/issues
-repository=https://github.com/qgis/QGIS
+tracker=https://github.com/sag1687/q_press/issues
+repository=https://github.com/sag1687/q_press
 homepage=https://sinocloud.it
-changelog=Version 1.8.1: Resolved security, PEP8 and hidden file warnings.
+changelog=Version 2.0.0: New shared SinoCloud slate-blue dark theme (same as SARIAG and STAC Browser), language selector with Italian/English flags, Info tab drop-down with the author's other plugins and GitHub links, homepage updated to sinocloud.it, development files removed from the package, bilingual README updated. / Nuovo tema scuro slate-blue condiviso della famiglia SinoCloud (lo stesso di SARIAG e STAC Browser), selettore lingua con bandiere Italiano/Inglese, menù a tendina nella scheda Info con gli altri plugin dell'autore e link GitHub, homepage aggiornata a sinocloud.it, file di sviluppo rimossi dal pacchetto, README bilingue aggiornato.
+Version 1.9.2: Fixed QGIS 4 message bar compatibility by using Qgis.MessageLevel values and positional pushMessage arguments.
+Version 1.9.1: Added window resize arrow controls and scrollable configuration content for smaller QGIS workspaces.
+Version 1.9.0: Added QGIS 4/Qt6 compatibility shims, manual map scale, custom paper size and Help tab.
+Version 1.8.2: Fixed Bandit security warning and PEP8 line break issues.
+Version 1.8.1: Resolved security, PEP8 and hidden file warnings.
 Version 1.8.0: Fixed security vulnerability in online elevation requests and cleaned up build artifacts.
 category=Vector
 tags=pdf,layout,print,cartography,map,atlas,dashboard,charts,attributes,topography,elevation,profile,qgis

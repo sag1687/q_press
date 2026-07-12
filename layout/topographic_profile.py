@@ -8,10 +8,22 @@ import urllib.request
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
-from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsMapLayerType, QgsPointXY, QgsProject, QgsUnitTypes  # noqa: E501
+from qgis.core import (
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsMapLayerType,
+    QgsPointXY,
+    QgsProject,
+    QgsUnitTypes,
+)  # noqa: E501
 from qgis.PyQt.QtCore import QRectF, Qt
 from qgis.PyQt.QtGui import QColor, QFont, QFontMetricsF, QImage, QPainter, QPen
+from ..qt_compat import ensure_qfont_compat, ensure_qimage_compat, ensure_qpainter_compat, ensure_qt_compat
 
+ensure_qt_compat(Qt)
+ensure_qfont_compat(QFont)
+ensure_qimage_compat(QImage)
+ensure_qpainter_compat(QPainter)
 
 DATASET_STACK = "eudem25m,srtm30m,aster30m,mapzen"
 API_URL = f"https://api.opentopodata.org/v1/{DATASET_STACK}"
@@ -94,18 +106,16 @@ def _sample_polyline(points, sample_count):
         return [clean_points[0], clean_points[-1]]
 
     sample_count = max(int(sample_count), 2)
-    segment_lengths = [_map_distance(previous, current)
-                       for previous, current in zip(clean_points[:-1], clean_points[1:])]
+    segment_lengths = [
+        _map_distance(previous, current) for previous, current in zip(clean_points[:-1], clean_points[1:])
+    ]
     sampled = []
     segment_index = 0
     covered = 0.0
 
     for index in range(sample_count):
         target = total_length * (index / float(sample_count - 1))
-        while (
-            segment_index < len(segment_lengths) - 1
-            and covered + segment_lengths[segment_index] < target
-        ):
+        while segment_index < len(segment_lengths) - 1 and covered + segment_lengths[segment_index] < target:
             covered += segment_lengths[segment_index]
             segment_index += 1
 
@@ -277,9 +287,7 @@ def _capture_rate_limit_headers(headers, status_code=None):
     if headers is None:
         return
 
-    limit = _parse_int_header(
-        _header_value(headers, ("X-RateLimit-Limit", "RateLimit-Limit", "X-Rate-Limit-Limit"))
-    )
+    limit = _parse_int_header(_header_value(headers, ("X-RateLimit-Limit", "RateLimit-Limit", "X-Rate-Limit-Limit")))
     remaining = _parse_int_header(
         _header_value(headers, ("X-RateLimit-Remaining", "RateLimit-Remaining", "X-Rate-Limit-Remaining"))
     )
@@ -358,7 +366,8 @@ def opentopodata_quota_status(language="it"):
         )
     if reset_at:
         details.append(
-            _text(language, f"Reset/riapertura stimata: {reset_at}.", f"Estimated reset/reopen: {reset_at}."))
+            _text(language, f"Reset/riapertura stimata: {reset_at}.", f"Estimated reset/reopen: {reset_at}.")
+        )
     if last_updated:
         updated = _format_time(last_updated, language)
         details.append(_text(language, f"Aggiornato alle {updated}.", f"Updated at {updated}."))
@@ -374,7 +383,7 @@ def _open_topodata_payload(request):
     for attempt in range(OPEN_TOPO_DATA_MAX_RETRIES + 1):
         try:
             _RATE_LIMIT_STATE["session_requests"] += 1
-            with urllib.request.urlopen(request, timeout=25) as response:
+            with urllib.request.urlopen(request, timeout=25) as response:  # nosec B310
                 _capture_rate_limit_headers(response.headers, getattr(response, "status", None))
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
@@ -402,12 +411,12 @@ def _query_elevations(wgs84_points):
     for start in range(0, len(wgs84_points), OPEN_TOPO_DATA_CHUNK_SIZE):
         if start > 0:
             _responsive_sleep(OPEN_TOPO_DATA_REQUEST_INTERVAL_SECONDS)
-        chunk = wgs84_points[start: start + OPEN_TOPO_DATA_CHUNK_SIZE]
+        chunk = wgs84_points[start:start + OPEN_TOPO_DATA_CHUNK_SIZE]
         locations = "|".join(f"{point.y():.7f},{point.x():.7f}" for point in chunk)
         query = urllib.parse.urlencode({"locations": locations, "interpolation": OPEN_TOPO_DATA_METHOD})
         request = urllib.request.Request(
             f"{API_URL}?{query}",
-            headers={"User-Agent": "Q-Press-QGIS-Plugin/1.8.0"},
+            headers={"User-Agent": "Q-Press-QGIS-Plugin/1.9.2"},
         )
         payload = _open_topodata_payload(request)
 
@@ -437,8 +446,9 @@ def _raster_spacing_m(raster_layer):
     if not raster_layer:
         return OPEN_TOPO_DATA_SPACING_M
     try:
-        pixel_size = max(abs(float(raster_layer.rasterUnitsPerPixelX())),
-                         abs(float(raster_layer.rasterUnitsPerPixelY())))
+        pixel_size = max(
+            abs(float(raster_layer.rasterUnitsPerPixelX())), abs(float(raster_layer.rasterUnitsPerPixelY()))
+        )
     except Exception:
         return OPEN_TOPO_DATA_SPACING_M
 
@@ -618,7 +628,7 @@ def _nice_profile_step(raw_value):
     if raw_value <= 0:
         return 1.0
     exponent = math.floor(math.log10(raw_value))
-    fraction = raw_value / (10 ** exponent)
+    fraction = raw_value / (10**exponent)
     if fraction <= 1:
         base = 1
     elif fraction <= 2:
@@ -627,7 +637,7 @@ def _nice_profile_step(raw_value):
         base = 5
     else:
         base = 10
-    return base * (10 ** exponent)
+    return base * (10**exponent)
 
 
 def _source_description(source_info, language):
@@ -637,8 +647,20 @@ def _source_description(source_info, language):
     if source_type == "project":
         return _text(
             language,
-            f"Fonte quote: raster progetto '{source_info.get('name', '')}', banda {source_info.get('band', 1)}.",
-            f"Elevation source: project raster '{source_info.get('name', '')}', band {source_info.get('band', 1)}.",
+            f"Fonte quote: raster progetto '{
+                source_info.get(
+                    'name',
+                    '')}', banda {
+                source_info.get(
+                    'band',
+                    1)}.",
+            f"Elevation source: project raster '{
+                source_info.get(
+                    'name',
+                    '')}', band {
+                source_info.get(
+                    'band',
+                    1)}.",
         )
     dataset_display = DATASET_STACK.replace(",", ", ")
     return _text(
@@ -681,12 +703,12 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
         min_size=28,
         word_wrap=True,
     )
-    source_text = (
-        _text(language, "Tracciato profilo: linea indicata dall'utente o geometria lineare intercettata.",
-              "Profile trace: user indicated line or intersected line geometry.") +
-        "\n" +
-        _source_description(source_info, language)
+    trace_text = _text(
+        language,
+        "Tracciato profilo: linea indicata dall'utente o geometria lineare intercettata.",
+        "Profile trace: user indicated line or intersected line geometry.",
     )
+    source_text = f"{trace_text}\n{_source_description(source_info, language)}"
     _draw_fitted_text(
         painter,
         QRectF(90, 146, 2220, 104),
@@ -872,14 +894,16 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
                 word_wrap=False,
             )
 
-    summary = (
-        f"{_text(language, 'Quota min', 'Min elevation')}: {_format_number(min_elev, 0, language)} m    "
-        f"{_text(language, 'Quota max', 'Max elevation')}: {_format_number(max_elev, 0, language)} m    "
-        f"{_text(language, 'Dislivello', 'Elevation gain')}: {_format_number(max_elev - min_elev, 0, language)} m    "
-        f"{_text(language, 'Lunghezza', 'Length')}: {_format_number(max_dist, language=language)} km"
-    )
+    summary_parts = [
+        f"{_text(language, 'Quota min', 'Min elevation')}: {_format_number(min_elev, 0, language)} m",
+        f"{_text(language, 'Quota max', 'Max elevation')}: {_format_number(max_elev, 0, language)} m",
+        f"{_text(language, 'Dislivello', 'Elevation gain')}: {_format_number(max_elev - min_elev, 0, language)} m",
+        f"{_text(language, 'Lunghezza', 'Length')}: {_format_number(max_dist, language=language)} km",
+    ]
     if source_info:
-        summary += f"    {_text(language, 'Campioni', 'Samples')}: {source_info.get('samples', len(valid))}"
+        sample_label = _text(language, "Campioni", "Samples")
+        summary_parts.append(f"{sample_label}: {source_info.get('samples', len(valid))}")
+    summary = "    ".join(summary_parts)
     _draw_fitted_text(
         painter,
         QRectF(230, 1250, 1880, 70),
@@ -894,7 +918,9 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
 
     painter.end()
 
-    filename = f"qpress_topographic_profile_{_slug(title)}_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.png"
+    filename = f"qpress_topographic_profile_{
+        _slug(title)}_{
+        datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.png"
     path = os.path.join(output_dir, filename)
     image.save(path, "PNG")
     return path
