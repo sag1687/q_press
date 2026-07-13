@@ -162,12 +162,7 @@ class SettingsDialog(QDialog):
 
         config_tab = QScrollArea()
         config_tab.setWidgetResizable(True)
-        config_frame_shape = (
-            QFrame.Shape.NoFrame
-            if hasattr(QFrame, "Shape")
-            else QFrame.NoFrame
-        )
-        config_tab.setFrameShape(config_frame_shape)
+        config_tab.setFrameShape(QFrame.Shape.NoFrame)
         config_tab.viewport().setStyleSheet("background-color: #141a22;")
         config_content = QWidget()
         config_tab_layout = QVBoxLayout()
@@ -937,12 +932,7 @@ class SettingsDialog(QDialog):
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        frame_shape = (
-            QFrame.Shape.NoFrame
-            if hasattr(QFrame, "Shape")
-            else QFrame.NoFrame
-        )
-        scroll_area.setFrameShape(frame_shape)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout()
