@@ -4,13 +4,15 @@ qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Professional cartographic PDF generator for QGIS 4/Qt6. Use Shift+Drag to select an area and export a comprehensive map with automatic or manual scale, custom paper size, filtered attributes, charts, and topographic profiles.
 about=Q-Press allows you to select an area directly from the QGIS canvas using Shift+Drag and instantly generate a professional cartographic PDF. The output includes a technical title block, automatic or manual scale, custom paper size, coordinate grids, legend, overview map, filtered attribute tables, statistical dashboards, and a single-line topographic profile from OpenTopoData or a project DTM/DEM raster.
-version=2.0.3
+version=2.0.4
+supportsQt6=True
 author=Dott. Sarino Alfonso Grande
 email=sino.grande@gmail.com
 tracker=https://github.com/sag1687/q_press/issues
 repository=https://github.com/sag1687/q_press
 homepage=https://sinocloud.it
-changelog=Version 2.0.3: Fixed E501 (line too long, PEP8) across settings_dialog.py, layout_builder.py, chart_generator.py, topographic_profile.py, attribute_handler.py, map_tool.py and q_press_plugin.py. / Corretto E501 (righe troppo lunghe, PEP8) in settings_dialog.py, layout_builder.py, chart_generator.py, topographic_profile.py, attribute_handler.py, map_tool.py e q_press_plugin.py.
+changelog=Version 2.0.4: Full security and Qt6 compatibility audit (network calls with timeout and https scheme whitelist, secure temp dirs, Qt5/Qt6 enum shims verified in every module); added the official supportsQt6 flag so QGIS Qt6 builds accept the plugin. / Audit completo di sicurezza e compatibilità Qt6 (chiamate di rete con timeout e whitelist schema https, directory temporanee sicure, shim enum Qt5/Qt6 verificati in ogni modulo); aggiunto il flag ufficiale supportsQt6 per le build QGIS Qt6.
+Version 2.0.3: Fixed E501 (line too long, PEP8) across settings_dialog.py, layout_builder.py, chart_generator.py, topographic_profile.py, attribute_handler.py, map_tool.py and q_press_plugin.py. / Corretto E501 (righe troppo lunghe, PEP8) in settings_dialog.py, layout_builder.py, chart_generator.py, topographic_profile.py, attribute_handler.py, map_tool.py e q_press_plugin.py.
 Version 2.0.2: Fixed W503 (line break before binary operator) in plugin_hub.py; removed hidden .qgis_plugin_version file that the publish pipeline was mistakenly bundling into the package. / Corretto W503 (line break before binary operator) in plugin_hub.py; rimosso file nascosto .qgis_plugin_version generato erroneamente dentro il pacchetto dalla pipeline di pubblicazione.
 Version 2.0.1: Removed unused legacy files not referenced by the code (dev test scripts, other plugins' logos). / File residui non utilizzati dal codice rimossi (script di test di sviluppo, loghi di altri plugin).
 Version 2.0.0: New shared SinoCloud slate-blue dark theme (same as SARIAG and STAC Browser), language selector with Italian/English flags, Info tab drop-down with the author's other plugins and GitHub links, homepage updated to sinocloud.it, development files removed from the package, bilingual README updated. / Nuovo tema scuro slate-blue condiviso della famiglia SinoCloud (lo stesso di SARIAG e STAC Browser), selettore lingua con bandiere Italiano/Inglese, menù a tendina nella scheda Info con gli altri plugin dell'autore e link GitHub, homepage aggiornata a sinocloud.it, file di sviluppo rimossi dal pacchetto, README bilingue aggiornato.

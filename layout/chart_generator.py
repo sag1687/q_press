@@ -206,7 +206,7 @@ def _aggregate(
 
     if top_n and len(rows) > top_n:
         head = rows[: max(top_n - 1, 1)]
-        tail_sum = sum(value for _, value in rows[max(top_n - 1, 1) :])
+        tail_sum = sum(value for _, value in rows[max(top_n - 1, 1):])
         rows = head + [(_text(language, "Altri", "Other"), tail_sum)]
 
     total = sum(value for _, value in rows)

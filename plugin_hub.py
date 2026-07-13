@@ -303,8 +303,7 @@ def family_html(self_key):
     return (
         "<h3>ALTRI PLUGIN DELL'AUTORE / MORE PLUGINS BY THE AUTHOR</h3>"
         "<table><tr><th>Plugin</th><th>IT / EN</th><th>Link</th></tr>"
-        + rows
-        + "</table>"
+        f"{rows}</table>"
     )
 
 

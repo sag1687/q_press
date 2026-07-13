@@ -503,7 +503,7 @@ def _query_elevations(wgs84_points):
     for start in range(0, len(wgs84_points), OPEN_TOPO_DATA_CHUNK_SIZE):
         if start > 0:
             _responsive_sleep(OPEN_TOPO_DATA_REQUEST_INTERVAL_SECONDS)
-        chunk = wgs84_points[start : start + OPEN_TOPO_DATA_CHUNK_SIZE]
+        chunk = wgs84_points[start:start + OPEN_TOPO_DATA_CHUNK_SIZE]
         locations = "|".join(
             f"{point.y():.7f},{point.x():.7f}" for point in chunk
         )
