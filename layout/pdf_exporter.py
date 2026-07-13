@@ -20,7 +20,7 @@ def export_to_pdf(layout, output_path):
         settings.exportMetadata = True
 
     res = exporter.exportToPdf(output_path, settings)
-    if res != QgsLayoutExporter.Success:
+    if res != QgsLayoutExporter.ExportResult.Success:
         raise Exception(f"Errore durante l'esportazione PDF: {res}")
     if not os.path.exists(output_path) or os.path.getsize(output_path) <= 0:
         raise Exception(

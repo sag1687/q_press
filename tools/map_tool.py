@@ -46,7 +46,7 @@ class QpressMapTool(QgsMapTool):
     def activate(self):
         """Attiva il tool sulla mappa e imposta il cursore personalizzato."""
         super().activate()
-        self.canvas.setCursor(Qt.CrossCursor)
+        self.canvas.setCursor(Qt.CursorShape.CrossCursor)
         self.is_dragging = False
         self.start_point = None
 
@@ -85,8 +85,8 @@ class QpressMapTool(QgsMapTool):
         click sinistro.
         """
         try:
-            if e.button() == Qt.LeftButton and (
-                e.modifiers() & Qt.ShiftModifier
+            if e.button() == Qt.MouseButton.LeftButton and (
+                e.modifiers() & Qt.KeyboardModifier.ShiftModifier
             ):
                 self.is_dragging = True
                 self.start_point = self.toMapCoordinates(e.pos())
@@ -129,7 +129,7 @@ class QpressMapTool(QgsMapTool):
         pulisce.
         """
         try:
-            if e.button() == Qt.LeftButton and self.is_dragging:
+            if e.button() == Qt.MouseButton.LeftButton and self.is_dragging:
                 self.is_dragging = False
                 end_point = self.toMapCoordinates(e.pos())
 

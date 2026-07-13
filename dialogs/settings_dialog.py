@@ -137,7 +137,7 @@ class SettingsDialog(QDialog):
         top_bar = QHBoxLayout()
         header = self._label("Q-PRESS: STAMPA PDF", "Q-PRESS: PDF PRINT")
         header.setObjectName("header")
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         top_bar.addWidget(header, stretch=1)
 
         self.lbl_language = self._label("Lingua:", "Language:")
@@ -335,7 +335,7 @@ class SettingsDialog(QDialog):
         lay_preview = QVBoxLayout()
         self.lbl_preview = QLabel()
         self.lbl_preview.setObjectName("previewLabel")
-        self.lbl_preview.setAlignment(Qt.AlignCenter)
+        self.lbl_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_preview.setMinimumSize(320, 420)
         lay_preview.addWidget(self.lbl_preview)
         grp_preview.setLayout(lay_preview)
@@ -927,7 +927,7 @@ class SettingsDialog(QDialog):
 
         title = self._label("Guida", "Help")
         title.setObjectName("infoTitle")
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         help_layout.addWidget(title)
 
         scroll_area = QScrollArea()
@@ -939,7 +939,7 @@ class SettingsDialog(QDialog):
         scroll_layout.setContentsMargins(0, 0, 0, 0)
 
         self.lbl_help_body = QLabel()
-        self.lbl_help_body.setTextFormat(Qt.RichText)
+        self.lbl_help_body.setTextFormat(Qt.TextFormat.RichText)
         self.lbl_help_body.setWordWrap(True)
         self.lbl_help_body.setObjectName("infoSubtle")
         self.lbl_help_body.setOpenExternalLinks(False)
@@ -1086,7 +1086,9 @@ class SettingsDialog(QDialog):
             self._label("Campi categoria da usare:", "Category Fields:")
         )
         self.list_chart_fields = QListWidget()
-        self.list_chart_fields.setSelectionMode(QListWidget.MultiSelection)
+        self.list_chart_fields.setSelectionMode(
+            QListWidget.SelectionMode.MultiSelection
+        )
         self.list_chart_fields.setMinimumHeight(120)
         lay_dashboard.addWidget(self.list_chart_fields)
 
@@ -1196,24 +1198,25 @@ class SettingsDialog(QDialog):
 
         title = QLabel("Q-Press")
         title.setObjectName("infoTitle")
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(title)
 
         logo_label = QLabel()
-        logo_label.setAlignment(Qt.AlignCenter)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sarino_logo = self._resource_path("sarino_logo.jpg")
         if os.path.exists(sarino_logo):
             pixmap = QPixmap(sarino_logo)
             logo_label.setPixmap(
                 pixmap.scaled(
-                    420, 260, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                    420, 260, Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
                 )
             )
         info_layout.addWidget(logo_label)
 
         self.lbl_info_details = QLabel()
-        self.lbl_info_details.setAlignment(Qt.AlignCenter)
-        self.lbl_info_details.setTextFormat(Qt.RichText)
+        self.lbl_info_details.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_info_details.setTextFormat(Qt.TextFormat.RichText)
         info_layout.addWidget(self.lbl_info_details)
 
         self.family_widget = plugin_hub.make_family_widget(
@@ -1369,8 +1372,8 @@ class SettingsDialog(QDialog):
         for feature in features:
             title = self._identity_from_feature(feature)
             item = QListWidgetItem(title)
-            item.setData(Qt.UserRole, feature.id())
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
+            item.setData(Qt.ItemDataRole.UserRole, feature.id())
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
             self.list_topo_titles.addItem(item)
 
     def _toggle_topo_controls(self, enabled):
@@ -1526,7 +1529,7 @@ class SettingsDialog(QDialog):
         titles = {}
         for index in range(self.list_topo_titles.count()):
             item = self.list_topo_titles.item(index)
-            feature_id = item.data(Qt.UserRole)
+            feature_id = item.data(Qt.ItemDataRole.UserRole)
             title = item.text().strip()
             if feature_id is not None and title:
                 titles[str(int(feature_id))] = title
@@ -1569,7 +1572,7 @@ class SettingsDialog(QDialog):
         self.chk_dashboard.setEnabled(True)
         for index, field in enumerate(self.layer.fields()):
             item = QListWidgetItem(field.name())
-            item.setData(Qt.UserRole, field.name())
+            item.setData(Qt.ItemDataRole.UserRole, field.name())
             self.list_chart_fields.addItem(item)
             if index == 0:
                 item.setSelected(True)
@@ -1756,12 +1759,12 @@ class SettingsDialog(QDialog):
             unit = (
                 self.map_settings.mapUnits()
                 if self.map_settings
-                else QgsUnitTypes.DistanceUnknownUnit
+                else QgsUnitTypes.DistanceUnit.DistanceUnknownUnit
             )
         except Exception:
-            unit = QgsUnitTypes.DistanceUnknownUnit
+            unit = QgsUnitTypes.DistanceUnit.DistanceUnknownUnit
 
-        if unit == QgsUnitTypes.DistanceDegrees:
+        if unit == QgsUnitTypes.DistanceUnit.DistanceDegrees:
             lat = (
                 self.selection_extent.yMinimum()
                 + self.selection_extent.yMaximum()
@@ -1770,7 +1773,7 @@ class SettingsDialog(QDialog):
 
         try:
             factor = QgsUnitTypes.fromUnitToUnitFactor(
-                unit, QgsUnitTypes.DistanceMeters
+                unit, QgsUnitTypes.DistanceUnit.DistanceMeters
             )
             if factor > 0:
                 return width * factor
@@ -1793,12 +1796,12 @@ class SettingsDialog(QDialog):
             unit = (
                 self.map_settings.mapUnits()
                 if self.map_settings
-                else QgsUnitTypes.DistanceUnknownUnit
+                else QgsUnitTypes.DistanceUnit.DistanceUnknownUnit
             )
         except Exception:
-            unit = QgsUnitTypes.DistanceUnknownUnit
+            unit = QgsUnitTypes.DistanceUnit.DistanceUnknownUnit
 
-        if unit == QgsUnitTypes.DistanceDegrees:
+        if unit == QgsUnitTypes.DistanceUnit.DistanceDegrees:
             lat = (
                 self.selection_extent.yMinimum()
                 + self.selection_extent.yMaximum()
@@ -1810,7 +1813,7 @@ class SettingsDialog(QDialog):
 
         try:
             factor = QgsUnitTypes.fromUnitToUnitFactor(
-                unit, QgsUnitTypes.DistanceMeters
+                unit, QgsUnitTypes.DistanceUnit.DistanceMeters
             )
             if factor > 0:
                 return target_width_m / factor
@@ -2137,7 +2140,8 @@ class SettingsDialog(QDialog):
         def font(size, bold=False):
             px_size = max(int(size * 0.95), 5)
             return QFont(
-                "Arial", px_size, QFont.Bold if bold else QFont.Normal
+                "Arial", px_size,
+                QFont.Weight.Bold if bold else QFont.Weight.Normal
             )
 
         def draw_text(
@@ -2145,12 +2149,12 @@ class SettingsDialog(QDialog):
             area,
             size,
             bold=False,
-            align=Qt.AlignLeft | Qt.AlignVCenter,
+            align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             color=None,
         ):
             painter.setPen(color or QColor("#111827"))
             painter.setFont(font(size, bold))
-            painter.drawText(area, align | Qt.TextWordWrap, text)
+            painter.drawText(area, align | Qt.TextFlag.TextWordWrap, text)
 
         def draw_logo(area):
             logo_path = self.logo_input.text().strip()
@@ -2160,8 +2164,8 @@ class SettingsDialog(QDialog):
                     target_size = area.size().toSize()
                     scaled_logo = logo_pixmap.scaled(
                         target_size,
-                        Qt.KeepAspectRatio,
-                        Qt.SmoothTransformation,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
                     )
                     logo_x = area.left() + (
                         (area.width() - scaled_logo.width()) / 2.0
@@ -2171,7 +2175,14 @@ class SettingsDialog(QDialog):
                     )
                     painter.drawPixmap(int(logo_x), int(logo_y), scaled_logo)
                     return
-            draw_text("LOGO", area, 6, True, Qt.AlignCenter, QColor("#475569"))
+            draw_text(
+                "LOGO",
+                area,
+                6,
+                True,
+                Qt.AlignmentFlag.AlignCenter,
+                QColor("#475569")
+            )
 
         def draw_scale_badge(area, scale_value):
             if area.width() <= 20 or area.height() <= 8:
@@ -2231,7 +2242,7 @@ class SettingsDialog(QDialog):
                     ),
                     5,
                     True,
-                    Qt.AlignLeft | Qt.AlignVCenter,
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                     QColor("#475569"),
                 )
                 draw_text(
@@ -2244,7 +2255,7 @@ class SettingsDialog(QDialog):
                     ),
                     8,
                     True,
-                    Qt.AlignLeft | Qt.AlignVCenter,
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                     QColor("#111827"),
                 )  # noqa: E501
             else:
@@ -2253,7 +2264,7 @@ class SettingsDialog(QDialog):
                     text_area,
                     7,
                     True,
-                    Qt.AlignLeft | Qt.AlignVCenter,
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                     QColor("#111827"),
                 )
 
@@ -2271,7 +2282,7 @@ class SettingsDialog(QDialog):
         pixmap = QPixmap(int(canvas_w), int(canvas_h))
         pixmap.fill(QColor("#070F1A"))
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         page_rect = QRectF(ox, oy, draw_w, draw_h)
         painter.fillRect(page_rect, QColor("#FFFFFF"))
@@ -2406,7 +2417,7 @@ class SettingsDialog(QDialog):
             ),
             7,
             True,
-            Qt.AlignCenter,
+            Qt.AlignmentFlag.AlignCenter,
         )
 
         scale_w_mm = min(70.0, geometry["map_w"] * 0.30)
@@ -2438,7 +2449,7 @@ class SettingsDialog(QDialog):
             ),
             6,
             True,
-            Qt.AlignCenter,
+            Qt.AlignmentFlag.AlignCenter,
         )
         bar_y = scale_box.top() + 11
         for idx in range(4):
@@ -2461,7 +2472,7 @@ class SettingsDialog(QDialog):
             ),
             6,
             False,
-            Qt.AlignCenter,
+            Qt.AlignmentFlag.AlignCenter,
         )
 
         panel_rect = rect(
@@ -2539,7 +2550,7 @@ class SettingsDialog(QDialog):
                 title_rect,
                 self._title_font_for_preview(),
                 True,
-                Qt.AlignCenter,
+                Qt.AlignmentFlag.AlignCenter,
             )
             draw_scale_badge(scale_rect, scale_est)
             draw_text(
@@ -2547,7 +2558,7 @@ class SettingsDialog(QDialog):
                 meta_rect,
                 7,
                 False,
-                Qt.AlignLeft | Qt.AlignTop,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
                 QColor("#1F2937"),
             )
         else:
@@ -2602,7 +2613,7 @@ class SettingsDialog(QDialog):
                 title_rect,
                 self._title_font_for_preview(),
                 True,
-                Qt.AlignCenter,
+                Qt.AlignmentFlag.AlignCenter,
             )
             draw_scale_badge(scale_rect, scale_est)
             draw_text(
@@ -2610,7 +2621,7 @@ class SettingsDialog(QDialog):
                 meta_rect,
                 7,
                 False,
-                Qt.AlignLeft | Qt.AlignTop,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
                 QColor("#1F2937"),
             )
 
@@ -2654,7 +2665,7 @@ class SettingsDialog(QDialog):
     def get_settings(self):
         chart_fields = []
         for item in self.list_chart_fields.selectedItems():
-            field_name = item.data(Qt.UserRole)
+            field_name = item.data(Qt.ItemDataRole.UserRole)
             if field_name:
                 chart_fields.append(field_name)
         chart_value = self.combo_chart_value.currentData()

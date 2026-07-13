@@ -64,7 +64,9 @@ def safe_filename(name):
 
 
 def _mm(value):
-    return QgsLayoutMeasurement(value, QgsUnitTypes.LayoutMillimeters)
+    return QgsLayoutMeasurement(
+        value, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+    )
 
 
 def _color_to_rgba(color):
@@ -84,9 +86,13 @@ def _add_rectangle(
     layout, x, y, w, h, fill_color, border_color, border_mm=0.2
 ):
     shape = QgsLayoutItemShape(layout)
-    shape.setShapeType(QgsLayoutItemShape.Rectangle)
-    shape.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
-    shape.attemptResize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters))
+    shape.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
+    shape.attemptMove(
+        QgsLayoutPoint(x, y, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    )
+    shape.attemptResize(
+        QgsLayoutSize(w, h, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    )
     symbol = QgsFillSymbol.createSimple(
         {
             "style": "solid",
@@ -110,21 +116,29 @@ def _add_label(
     font_size,
     bold,
     color,
-    halign=Qt.AlignLeft,
-    valign=Qt.AlignVCenter,
+    halign=Qt.AlignmentFlag.AlignLeft,
+    valign=Qt.AlignmentFlag.AlignVCenter,
 ):
     item = QgsLayoutItemLabel(layout)
     item.setText(text)
     item.setFont(
-        QFont("Arial", font_size, QFont.Bold if bold else QFont.Normal)
+        QFont(
+            "Arial",
+            font_size,
+            QFont.Weight.Bold if bold else QFont.Weight.Normal
+        )
     )
     item.setFontColor(color)
     item.setHAlign(halign)
     item.setVAlign(valign)
     item.setMarginX(1.2)
     item.setMarginY(0.8)
-    item.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
-    item.attemptResize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters))
+    item.attemptMove(
+        QgsLayoutPoint(x, y, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    )
+    item.attemptResize(
+        QgsLayoutSize(w, h, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    )
     layout.addLayoutItem(item)
     return item
 
@@ -219,8 +233,8 @@ def _add_fitted_label(
     font_size,
     bold,
     color,
-    halign=Qt.AlignLeft,
-    valign=Qt.AlignVCenter,
+    halign=Qt.AlignmentFlag.AlignLeft,
+    valign=Qt.AlignmentFlag.AlignVCenter,
     min_size=7,
 ):
     fitted_text, fitted_size, _line_count = _fit_text_for_box(
@@ -497,8 +511,8 @@ def _add_section_frame(layout, title, x, y, w, h, font_size, lang="it"):
         max(font_size, 7),
         True,
         ink,
-        Qt.AlignLeft,
-        Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignLeft,
+        Qt.AlignmentFlag.AlignVCenter,
         min_size=6,
     )
     pad = 1.4
@@ -556,8 +570,8 @@ def _add_key_value_table(layout, rows, x, y, w, h, font_size):
             max(font_size - 1, 7),
             True,
             muted,
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=6,
         )
         _add_fitted_label(
@@ -570,8 +584,8 @@ def _add_key_value_table(layout, rows, x, y, w, h, font_size):
             max(font_size, 7),
             False,
             ink,
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=6,
         )
 
@@ -663,8 +677,8 @@ def _add_compact_attribute_block(
             max(font_size + 1, 8),
             True,
             QColor(17, 24, 39),
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=max(font_size - 1, 7),
         )
         _add_rectangle(
@@ -694,8 +708,8 @@ def _add_compact_attribute_block(
             row_font_size,
             False,
             QColor(31, 41, 55),
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=6,
         )
         cursor_y += line_h
@@ -772,8 +786,8 @@ def _add_scale_indicator(
             max(font_size - 1, 7),
             True,
             muted,
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=6,
         )
         _add_fitted_label(
@@ -786,8 +800,8 @@ def _add_scale_indicator(
             max(font_size + 2, 9),
             True,
             ink,
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=7,
         )
     else:
@@ -801,8 +815,8 @@ def _add_scale_indicator(
             max(font_size, 7),
             True,
             ink,
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=6,
         )
     return scale_text
@@ -856,10 +870,10 @@ def _configure_primary_grid(map_item, interval, font_size):
     grid.setEnabled(True)
     grid.setIntervalX(interval)
     grid.setIntervalY(interval)
-    grid.setStyle(QgsLayoutItemMapGrid.Solid)
+    grid.setStyle(QgsLayoutItemMapGrid.GridStyle.Solid)
     grid.setGridLineColor(QColor(55, 65, 81, 120))
     grid.setGridLineWidth(0.10)
-    grid.setFrameStyle(QgsLayoutItemMapGrid.Zebra)
+    grid.setFrameStyle(QgsLayoutItemMapGrid.FrameStyle.Zebra)
     try:
         grid.setFramePenSize(0.2)
         grid.setFramePenColor(QColor(17, 24, 39))
@@ -868,19 +882,23 @@ def _configure_primary_grid(map_item, interval, font_size):
     except Exception:  # nosec B110
         pass
     grid.setAnnotationEnabled(True)
-    grid.setAnnotationFormat(QgsLayoutItemMapGrid.Decimal)
+    grid.setAnnotationFormat(QgsLayoutItemMapGrid.AnnotationFormat.Decimal)
     grid.setAnnotationPrecision(0 if interval >= 10 else 1)
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Left
+        QgsLayoutItemMapGrid.DisplayMode.ShowAll,
+        QgsLayoutItemMapGrid.BorderSide.Left
     )
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Bottom
+        QgsLayoutItemMapGrid.DisplayMode.ShowAll,
+        QgsLayoutItemMapGrid.BorderSide.Bottom
     )
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Right
+        QgsLayoutItemMapGrid.DisplayMode.ShowAll,
+        QgsLayoutItemMapGrid.BorderSide.Right
     )
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Top
+        QgsLayoutItemMapGrid.DisplayMode.ShowAll,
+        QgsLayoutItemMapGrid.BorderSide.Top
     )
     try:
         grid.setAnnotationFrameDistance(1.5)
@@ -902,24 +920,30 @@ def _configure_secondary_grid(
     degree_interval = _calculate_degree_interval(interval)
     grid.setIntervalX(degree_interval)
     grid.setIntervalY(degree_interval)
-    grid.setStyle(QgsLayoutItemMapGrid.Cross)
+    grid.setStyle(QgsLayoutItemMapGrid.GridStyle.Cross)
     grid.setCrossLength(0.9)
     grid.setGridLineColor(QColor(107, 114, 128, 90))
     grid.setGridLineWidth(0.1)
     grid.setAnnotationEnabled(False)
-    grid.setAnnotationFormat(QgsLayoutItemMapGrid.DegreeMinuteSecond)
+    grid.setAnnotationFormat(
+        QgsLayoutItemMapGrid.AnnotationFormat.DegreeMinuteSecond
+    )
     grid.setAnnotationPrecision(0)
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.HideAll, QgsLayoutItemMapGrid.Left
+        QgsLayoutItemMapGrid.DisplayMode.HideAll,
+        QgsLayoutItemMapGrid.BorderSide.Left
     )
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.HideAll, QgsLayoutItemMapGrid.Bottom
+        QgsLayoutItemMapGrid.DisplayMode.HideAll,
+        QgsLayoutItemMapGrid.BorderSide.Bottom
     )
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Right
+        QgsLayoutItemMapGrid.DisplayMode.ShowAll,
+        QgsLayoutItemMapGrid.BorderSide.Right
     )
     grid.setAnnotationDisplay(
-        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Top
+        QgsLayoutItemMapGrid.DisplayMode.ShowAll,
+        QgsLayoutItemMapGrid.BorderSide.Top
     )
     try:
         grid.setAnnotationFrameDistance(1.5)
@@ -1126,7 +1150,7 @@ def _profile_trace_from_layer(layer, profile_line, map_settings):
     if not profile_line or layer.type() != QgsMapLayerType.VectorLayer:
         return None
     try:
-        if layer.geometryType() != QgsWkbTypes.LineGeometry:
+        if layer.geometryType() != QgsWkbTypes.GeometryType.LineGeometry:
             return None
     except Exception:
         return None
@@ -1279,7 +1303,7 @@ def _map_units_per_meter(map_item):
     )
     map_units = crs.mapUnits()
 
-    if map_units == QgsUnitTypes.DistanceDegrees:
+    if map_units == QgsUnitTypes.DistanceUnit.DistanceDegrees:
         center_lat = (
             map_item.extent().yMinimum() + map_item.extent().yMaximum()
         ) / 2.0
@@ -1289,12 +1313,12 @@ def _map_units_per_meter(map_item):
         )
         return 1.0 / meters_per_degree, map_units
 
-    if map_units == QgsUnitTypes.DistanceUnknownUnit:
+    if map_units == QgsUnitTypes.DistanceUnit.DistanceUnknownUnit:
         return None, map_units
 
     try:
         units_per_meter = QgsUnitTypes.fromUnitToUnitFactor(
-            QgsUnitTypes.DistanceMeters, map_units
+            QgsUnitTypes.DistanceUnit.DistanceMeters, map_units
         )
         if units_per_meter > 0:
             return units_per_meter, map_units
@@ -1341,12 +1365,12 @@ def _configure_scalebar(scalebar, map_item, small_font, target_width_mm):
     total_m = segment_m * 4.0
 
     if total_m >= 1000.0:
-        scalebar.setUnits(QgsUnitTypes.DistanceKilometers)
+        scalebar.setUnits(QgsUnitTypes.DistanceUnit.DistanceKilometers)
         scalebar.setMapUnitsPerScaleBarUnit(units_per_meter * 1000.0)
         scalebar.setUnitLabel("km")
         scalebar.setUnitsPerSegment(segment_m / 1000.0)
     else:
-        scalebar.setUnits(QgsUnitTypes.DistanceMeters)
+        scalebar.setUnits(QgsUnitTypes.DistanceUnit.DistanceMeters)
         scalebar.setMapUnitsPerScaleBarUnit(units_per_meter)
         scalebar.setUnitLabel("m")
         scalebar.setUnitsPerSegment(segment_m)
@@ -1359,11 +1383,15 @@ def _add_north_arrow(layout, map_item, x, y, size, font_size):
     if os.path.exists(north_asset):
         arrow = QgsLayoutItemPicture(layout)
         arrow.setPicturePath(north_asset)
-        arrow.setResizeMode(QgsLayoutItemPicture.Zoom)
+        arrow.setResizeMode(QgsLayoutItemPicture.ResizeMode.Zoom)
         arrow.setLinkedMap(map_item)
-        arrow.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
+        arrow.attemptMove(
+            QgsLayoutPoint(x, y, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+        )
         arrow.attemptResize(
-            QgsLayoutSize(size, size, QgsUnitTypes.LayoutMillimeters)
+            QgsLayoutSize(
+                size, size, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+            )
         )
         layout.addLayoutItem(arrow)
     else:
@@ -1377,8 +1405,8 @@ def _add_north_arrow(layout, map_item, x, y, size, font_size):
             font_size,
             True,
             QColor(15, 23, 42),
-            Qt.AlignHCenter,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignHCenter,
+            Qt.AlignmentFlag.AlignVCenter,
         )
 
 
@@ -1442,22 +1470,22 @@ def _add_map_decorations(
         max(metrics["small"], 7),
         True,
         QColor(17, 24, 39),
-        Qt.AlignHCenter,
-        Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignHCenter,
+        Qt.AlignmentFlag.AlignVCenter,
         min_size=6,
     )
     scalebar.attemptMove(
         QgsLayoutPoint(
             scale_box_x + (scale_box_w - metrics["scale_w"]) / 2.0,
             scale_box_y + scale_label_h + 3.0,
-            QgsUnitTypes.LayoutMillimeters,
+            QgsUnitTypes.LayoutUnit.LayoutMillimeters,
         )
     )
     scalebar.attemptResize(
         QgsLayoutSize(
             metrics["scale_w"],
             metrics["scale_h"],
-            QgsUnitTypes.LayoutMillimeters,
+            QgsUnitTypes.LayoutUnit.LayoutMillimeters,
         )
     )
     layout.addLayoutItem(scalebar)
@@ -1625,10 +1653,10 @@ def _build_overview_map(
 ):
     overview_map = QgsLayoutItemMap(layout)
     overview_map.attemptMove(
-        QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters)
+        QgsLayoutPoint(x, y, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
     )
     overview_map.attemptResize(
-        QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters)
+        QgsLayoutSize(w, h, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
     )
     overview_map.setCrs(crs)
 
@@ -1738,7 +1766,7 @@ def _style_legend(legend, font_size, lang="it"):
         pass
     try:
         legend.setStyleFont(
-            legend.Title, QFont("Arial", font_size, QFont.Bold)
+            legend.Title, QFont("Arial", font_size, QFont.Weight.Bold)
         )
         legend.setStyleFont(legend.Group, QFont("Arial", max(font_size, 8)))
         legend.setStyleFont(legend.Subgroup, QFont("Arial", max(font_size, 8)))
@@ -1776,9 +1804,13 @@ def _add_logo(layout, logo_path, x, y, w, h):
         return
     logo = QgsLayoutItemPicture(layout)
     logo.setPicturePath(logo_path)
-    logo.setResizeMode(QgsLayoutItemPicture.Zoom)
-    logo.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
-    logo.attemptResize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters))
+    logo.setResizeMode(QgsLayoutItemPicture.ResizeMode.Zoom)
+    logo.attemptMove(
+        QgsLayoutPoint(x, y, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    )
+    logo.attemptResize(
+        QgsLayoutSize(w, h, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    )
     layout.addLayoutItem(logo)
 
 
@@ -1815,10 +1847,14 @@ def _add_legend_section(layout, map_item, x, y, w, h, font_size, lang="it"):
     legend.setAutoUpdateModel(True)
     _style_legend(legend, max(font_size, 7), lang)
     legend.attemptMove(
-        QgsLayoutPoint(inner_x, inner_y, QgsUnitTypes.LayoutMillimeters)
+        QgsLayoutPoint(
+            inner_x, inner_y, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+        )
     )
     legend.attemptResize(
-        QgsLayoutSize(inner_w, inner_h, QgsUnitTypes.LayoutMillimeters)
+        QgsLayoutSize(
+            inner_w, inner_h, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+        )
     )
     layout.addLayoutItem(legend)
     return legend
@@ -1867,7 +1903,9 @@ def _layout_page_count(layout):
 def _append_layout_page(layout, page_w, page_h):
     page = QgsLayoutItemPage(layout)
     page.setPageSize(
-        QgsLayoutSize(page_w, page_h, QgsUnitTypes.LayoutMillimeters)
+        QgsLayoutSize(
+            page_w, page_h, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+        )
     )
     layout.pageCollection().addPage(page)
     return _layout_page_count(layout) - 1
@@ -1880,7 +1918,9 @@ def _page_origin(layout, page_index):
     try:
         point = layout.pageCollection().pagePositionToLayoutPosition(
             page_index,
-            QgsLayoutPoint(0.0, 0.0, QgsUnitTypes.LayoutMillimeters),
+            QgsLayoutPoint(
+                0.0, 0.0, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+            ),
         )
         return float(point.x()), float(point.y())
     except Exception:  # nosec B110
@@ -1912,8 +1952,8 @@ def _page_label(
     font_size,
     bold,
     color,
-    halign=Qt.AlignLeft,
-    valign=Qt.AlignVCenter,
+    halign=Qt.AlignmentFlag.AlignLeft,
+    valign=Qt.AlignmentFlag.AlignVCenter,
 ):
     ox, oy = _page_origin(layout, page_index)
     return _add_label(
@@ -1942,8 +1982,8 @@ def _page_fitted_label(
     font_size,
     bold,
     color,
-    halign=Qt.AlignLeft,
-    valign=Qt.AlignVCenter,
+    halign=Qt.AlignmentFlag.AlignLeft,
+    valign=Qt.AlignmentFlag.AlignVCenter,
     min_size=7,
 ):
     ox, oy = _page_origin(layout, page_index)
@@ -1969,11 +2009,15 @@ def _page_picture(layout, page_index, image_path, x, y, w, h):
     ox, oy = _page_origin(layout, page_index)
     picture = QgsLayoutItemPicture(layout)
     picture.setPicturePath(image_path)
-    picture.setResizeMode(QgsLayoutItemPicture.Zoom)
+    picture.setResizeMode(QgsLayoutItemPicture.ResizeMode.Zoom)
     picture.attemptMove(
-        QgsLayoutPoint(ox + x, oy + y, QgsUnitTypes.LayoutMillimeters)
+        QgsLayoutPoint(
+            ox + x, oy + y, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+        )
     )
-    picture.attemptResize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters))
+    picture.attemptResize(
+        QgsLayoutSize(w, h, QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    )
     layout.addLayoutItem(picture)
     return picture
 
@@ -2010,8 +2054,8 @@ def _add_report_page_header(
         title_size,
         True,
         QColor(17, 24, 39),
-        Qt.AlignLeft,
-        Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignLeft,
+        Qt.AlignmentFlag.AlignVCenter,
         min_size=10,
     )
     if subtitle:
@@ -2026,8 +2070,8 @@ def _add_report_page_header(
             subtitle_size,
             False,
             QColor(71, 85, 105),
-            Qt.AlignLeft,
-            Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignVCenter,
             min_size=8,
         )
     _page_rect(
@@ -2134,8 +2178,8 @@ def _build_horizontal_panel(
         metrics["title"],
         True,
         ink,
-        Qt.AlignHCenter,
-        Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignHCenter,
+        Qt.AlignmentFlag.AlignVCenter,
         min_size=max(metrics["meta"], 9),
     )
     _add_rectangle(
@@ -2330,8 +2374,8 @@ def _build_vertical_panel(
         metrics["title"],
         True,
         ink,
-        Qt.AlignHCenter,
-        Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignHCenter,
+        Qt.AlignmentFlag.AlignVCenter,
         min_size=max(metrics["meta"], 9),
     )
     cursor_y += title_h + gap
@@ -2504,15 +2548,15 @@ def _add_attributes_page_to_layout(
             10,
             False,
             QColor(71, 85, 105),
-            Qt.AlignLeft,
-            Qt.AlignTop,
+            Qt.AlignmentFlag.AlignLeft,
+            Qt.AlignmentFlag.AlignTop,
             min_size=8,
         )
         return
 
     table = QgsLayoutItemAttributeTable(layout)
     layout.addMultiFrame(table)
-    table.setSource(QgsLayoutItemAttributeTable.LayerAttributes)
+    table.setSource(QgsLayoutItemAttributeTable.ContentSource.LayerAttributes)
     table.setVectorLayer(layer)
     table.resetColumns()
     if field_names:
@@ -2523,9 +2567,9 @@ def _add_attributes_page_to_layout(
     )
     table.setMaximumNumberOfFeatures(max(row_count, 1))
     try:
-        table.setResizeMode(QgsLayoutMultiFrame.RepeatUntilFinished)
+        table.setResizeMode(QgsLayoutMultiFrame.ResizeMode.RepeatUntilFinished)
     except Exception:
-        table.setResizeMode(QgsLayoutMultiFrame.UseExistingFrames)
+        table.setResizeMode(QgsLayoutMultiFrame.ResizeMode.UseExistingFrames)
     try:
         table.setHeaderMode(table.AllFrames)
         table.setWrapBehavior(table.WrapText)
@@ -2535,7 +2579,7 @@ def _add_attributes_page_to_layout(
         table.setGridStrokeWidth(0.12)
         table.setBackgroundColor(QColor(255, 255, 255))
         header_format = QgsTextFormat()
-        header_format.setFont(QFont("Arial", 8, QFont.Bold))
+        header_format.setFont(QFont("Arial", 8, QFont.Weight.Bold))
         header_format.setColor(QColor(17, 24, 39))
         table.setHeaderTextFormat(header_format)
         content_format = QgsTextFormat()
@@ -2549,11 +2593,14 @@ def _add_attributes_page_to_layout(
     frame = QgsLayoutFrame(layout, table)
     frame.setFrameEnabled(True)
     frame.attemptMove(
-        QgsLayoutPoint(ox + 12.0, oy + 40.0, QgsUnitTypes.LayoutMillimeters)
+        QgsLayoutPoint(
+            ox + 12.0, oy + 40.0, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+        )
     )
     frame.attemptResize(
         QgsLayoutSize(
-            page_w - 24.0, page_h - 54.0, QgsUnitTypes.LayoutMillimeters
+            page_w - 24.0, page_h - 54.0,
+            QgsUnitTypes.LayoutUnit.LayoutMillimeters
         )
     )
     layout.addLayoutItem(frame)
@@ -2659,8 +2706,8 @@ def _add_topographic_profile_pages_to_layout(layout, profiles, lang="it"):
                 11,
                 False,
                 QColor(31, 41, 55),
-                Qt.AlignLeft,
-                Qt.AlignTop,
+                Qt.AlignmentFlag.AlignLeft,
+                Qt.AlignmentFlag.AlignTop,
                 min_size=8,
             )
             _page_fitted_label(
@@ -2679,8 +2726,8 @@ def _add_topographic_profile_pages_to_layout(layout, profiles, lang="it"):
                 10,
                 True,
                 QColor(17, 24, 39),
-                Qt.AlignLeft,
-                Qt.AlignTop,
+                Qt.AlignmentFlag.AlignLeft,
+                Qt.AlignmentFlag.AlignTop,
                 min_size=8,
             )
             continue
@@ -2725,7 +2772,9 @@ def build_and_export_layout(layer, rect, map_settings, settings):
 
         page = layout.pageCollection().page(0)
         page.setPageSize(
-            QgsLayoutSize(page_w, page_h, QgsUnitTypes.LayoutMillimeters)
+            QgsLayoutSize(
+                page_w, page_h, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+            )
         )
         layout.setName(f"Q-Press_{datetime.now().strftime('%Y%m%d%H%M%S')}")
 
@@ -2803,10 +2852,14 @@ def build_and_export_layout(layer, rect, map_settings, settings):
 
         map_item = QgsLayoutItemMap(layout)
         map_item.attemptMove(
-            QgsLayoutPoint(map_x, map_y, QgsUnitTypes.LayoutMillimeters)
+            QgsLayoutPoint(
+                map_x, map_y, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+            )
         )
         map_item.attemptResize(
-            QgsLayoutSize(map_w, map_h, QgsUnitTypes.LayoutMillimeters)
+            QgsLayoutSize(
+                map_w, map_h, QgsUnitTypes.LayoutUnit.LayoutMillimeters
+            )
         )
         _configure_map_item(
             layout, map_item, extent, map_settings, project.crs()

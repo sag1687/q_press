@@ -92,10 +92,10 @@ def _draw_fitted_text(
     size,
     bold=False,
     color=None,
-    align=Qt.AlignLeft | Qt.AlignVCenter,
+    align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
     min_size=8,
 ):  # noqa: E501
-    weight = QFont.Bold if bold else QFont.Normal
+    weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
     raw = str(text or "")
     for font_size in range(int(size), int(min_size) - 1, -1):
         font = QFont("Arial", font_size, weight)
@@ -216,11 +216,11 @@ def _aggregate(
 def _base_canvas(
     title, subtitle, field_label, width=1800, height=1200, language="it"
 ):
-    image = QImage(width, height, QImage.Format_ARGB32)
+    image = QImage(width, height, QImage.Format.Format_ARGB32)
     image.fill(QColor(255, 255, 255))
     painter = QPainter(image)
-    painter.setRenderHint(QPainter.Antialiasing, True)
-    painter.setRenderHint(QPainter.TextAntialiasing, True)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
     ink = QColor(17, 24, 39)
     muted = QColor(75, 85, 99)
@@ -236,7 +236,7 @@ def _base_canvas(
         28,
         True,
         ink,
-        Qt.AlignLeft | Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         18,
     )
     subtitle_text = subtitle or _text(
@@ -253,7 +253,7 @@ def _base_canvas(
         14,
         False,
         muted,
-        Qt.AlignLeft | Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         10,
     )
     painter.setPen(QPen(ink, 1))
@@ -266,7 +266,7 @@ def _base_canvas(
         12,
         True,
         ink,
-        Qt.AlignLeft | Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         9,
     )
     return image, painter
@@ -327,7 +327,7 @@ def _render_pie(
         16,
         True,
         QColor(17, 24, 39),
-        Qt.AlignCenter,
+        Qt.AlignmentFlag.AlignCenter,
         11,
     )
     _draw_fitted_text(
@@ -337,7 +337,7 @@ def _render_pie(
         20,
         True,
         QColor(17, 24, 39),
-        Qt.AlignCenter,
+        Qt.AlignmentFlag.AlignCenter,
         12,
     )
 
@@ -356,7 +356,7 @@ def _render_pie(
             15,
             False,
             QColor(17, 24, 39),
-            Qt.AlignLeft | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             10,
         )
 
@@ -374,7 +374,7 @@ def _render_pie(
             11,
             False,
             QColor(75, 85, 99),
-            Qt.AlignLeft | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             9,
         )
 
@@ -418,7 +418,7 @@ def _render_bar(
             13,
             False,
             QColor(17, 24, 39),
-            Qt.AlignRight | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
             9,
         )
         painter.drawRect(chart_x, y + 5, chart_w, 28)
@@ -436,7 +436,7 @@ def _render_bar(
             13,
             False,
             QColor(17, 24, 39),
-            Qt.AlignLeft | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             9,
         )
 
@@ -476,7 +476,7 @@ def _render_percent(
             14,
             False,
             QColor(17, 24, 39),
-            Qt.AlignLeft | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             9,
         )
         painter.drawRect(int(left + 380), int(y + 5), int(bar_w), 28)
@@ -491,7 +491,7 @@ def _render_percent(
             14,
             False,
             QColor(17, 24, 39),
-            Qt.AlignLeft | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             9,
         )
 

@@ -555,10 +555,10 @@ def _raster_spacing_m(raster_layer):
 
     crs = raster_layer.crs()
     try:
-        if crs.mapUnits() == QgsUnitTypes.DistanceDegrees:
+        if crs.mapUnits() == QgsUnitTypes.DistanceUnit.DistanceDegrees:
             return max(pixel_size * 111320.0, 1.0)
         factor = QgsUnitTypes.fromUnitToUnitFactor(
-            crs.mapUnits(), QgsUnitTypes.DistanceMeters
+            crs.mapUnits(), QgsUnitTypes.DistanceUnit.DistanceMeters
         )
         if factor > 0:
             return max(pixel_size * factor, 1.0)
@@ -652,11 +652,11 @@ def _draw_fitted_text(
     base_size,
     bold=False,
     color=None,
-    align=Qt.AlignLeft | Qt.AlignVCenter,
+    align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
     min_size=12,
     word_wrap=True,
 ):
-    weight = QFont.Bold if bold else QFont.Normal
+    weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
     min_size = max(int(min_size), 6)
     for size in range(int(base_size), min_size - 1, -1):
         font = QFont("Arial", size, weight)
@@ -797,11 +797,11 @@ def _render_profile(
     if len(valid) < 2:
         return None
 
-    image = QImage(2400, 1400, QImage.Format_ARGB32)
+    image = QImage(2400, 1400, QImage.Format.Format_ARGB32)
     image.fill(QColor(255, 255, 255))
     painter = QPainter(image)
-    painter.setRenderHint(QPainter.Antialiasing, True)
-    painter.setRenderHint(QPainter.TextAntialiasing, True)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
     ink = QColor(17, 24, 39)
     muted = QColor(75, 85, 99)
@@ -821,7 +821,7 @@ def _render_profile(
         42,
         True,
         ink,
-        Qt.AlignLeft | Qt.AlignVCenter,
+        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         min_size=28,
         word_wrap=True,
     )
@@ -839,7 +839,7 @@ def _render_profile(
         22,
         False,
         muted,
-        Qt.AlignLeft | Qt.AlignTop,
+        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
         min_size=16,
         word_wrap=True,
     )
@@ -866,7 +866,7 @@ def _render_profile(
 
     stations = _limited_station_distances(max_dist)
     dash_pen = QPen(QColor(168, 162, 158), 2)
-    dash_pen.setStyle(Qt.DashLine)
+    dash_pen.setStyle(Qt.PenStyle.DashLine)
     painter.setPen(dash_pen)
     for distance in stations:
         x = left + ((distance / max_dist) * width)
@@ -897,7 +897,7 @@ def _render_profile(
             19,
             False,
             axis,
-            Qt.AlignCenter,
+            Qt.AlignmentFlag.AlignCenter,
             min_size=13,
             word_wrap=False,
         )
@@ -911,7 +911,7 @@ def _render_profile(
             19,
             False,
             axis,
-            Qt.AlignRight | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
             min_size=13,
             word_wrap=False,
         )
@@ -923,7 +923,7 @@ def _render_profile(
         22,
         True,
         axis,
-        Qt.AlignCenter,
+        Qt.AlignmentFlag.AlignCenter,
         min_size=16,
         word_wrap=False,
     )
@@ -939,7 +939,7 @@ def _render_profile(
         22,
         True,
         axis,
-        Qt.AlignCenter,
+        Qt.AlignmentFlag.AlignCenter,
         min_size=15,
         word_wrap=False,
     )
@@ -976,7 +976,7 @@ def _render_profile(
             18,
             True,
             axis,
-            Qt.AlignLeft | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             min_size=13,
             word_wrap=False,
         )
@@ -1003,7 +1003,7 @@ def _render_profile(
             17,
             False,
             axis,
-            Qt.AlignCenter,
+            Qt.AlignmentFlag.AlignCenter,
             min_size=11,
             word_wrap=False,
         )
@@ -1016,7 +1016,7 @@ def _render_profile(
             17,
             False,
             axis,
-            Qt.AlignCenter,
+            Qt.AlignmentFlag.AlignCenter,
             min_size=11,
             word_wrap=False,
         )
@@ -1033,7 +1033,7 @@ def _render_profile(
                 17,
                 False,
                 axis,
-                Qt.AlignCenter,
+                Qt.AlignmentFlag.AlignCenter,
                 min_size=11,
                 word_wrap=False,
             )
@@ -1061,7 +1061,7 @@ def _render_profile(
         20,
         True,
         ink,
-        Qt.AlignCenter,
+        Qt.AlignmentFlag.AlignCenter,
         min_size=14,
         word_wrap=True,
     )

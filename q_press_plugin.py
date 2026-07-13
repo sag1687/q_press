@@ -24,7 +24,9 @@ class QPressProfileTask(QgsTask):
     """Background task for elevation sampling and profile image rendering."""
 
     def __init__(self, request, callback):
-        super().__init__("Q-Press - Profilo topografico", QgsTask.CanCancel)
+        super().__init__(
+            "Q-Press - Profilo topografico", QgsTask.Flag.CanCancel
+        )
         self.request = request
         self.callback = callback
         self.asset_dir = tempfile.mkdtemp(prefix="qpress_profile_")
@@ -142,7 +144,7 @@ class QPressPlugin:
         Defers execution to prevent Qt event loop crashes.
         """
         self.iface.mapCanvas().unsetMapTool(self.map_tool)
-        self.iface.mapCanvas().setCursor(Qt.ArrowCursor)
+        self.iface.mapCanvas().setCursor(Qt.CursorShape.ArrowCursor)
 
         # FIX: Esecuzione differita per evitare crash quando si apre un dialog
         # modale da un evento del mouse
@@ -177,7 +179,7 @@ class QPressPlugin:
             selection_extent=rect,
             map_settings=self.iface.mapCanvas().mapSettings(),
         )
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
         settings = dialog.get_settings()
@@ -303,7 +305,7 @@ class QPressPlugin:
             self.iface.mainWindow(),
         )
         progress.setWindowTitle("Q-Press")
-        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         progress.setValue(0)
 

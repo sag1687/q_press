@@ -104,7 +104,7 @@ def show_attribute_overflow_dialog(
     )
     result = dialog.exec()
 
-    if result == QDialog.Accepted:
+    if result == QDialog.DialogCode.Accepted:
         return {
             "generate_map": dialog.chk_map.isChecked(),
             "generate_attr_pdf": dialog.chk_attr.isChecked(),
