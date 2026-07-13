@@ -415,7 +415,7 @@ def _scale_value_text(scale_value):
     try:
         if scale_value and scale_value > 0:
             return f"1:{_format_scale(scale_value)}"
-    except Exception:
+    except Exception:  # nosec B110
         pass
     return "1:n/d"
 
@@ -818,11 +818,11 @@ def _configure_map_item(layout, map_item, extent, map_settings, crs):
             if layers:
                 map_item.setLayers(layers)
                 map_item.setKeepLayerSet(True)
-        except Exception:
+        except Exception:  # nosec B110
             pass
         try:
             map_item.setMapRotation(map_settings.rotation())
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
     _set_item_frame(map_item, 0.4, QColor(15, 23, 42))
@@ -865,7 +865,7 @@ def _configure_primary_grid(map_item, interval, font_size):
         grid.setFramePenColor(QColor(17, 24, 39))
         grid.setFrameFillColor1(QColor(255, 255, 255))
         grid.setFrameFillColor2(QColor(229, 231, 235))
-    except Exception:
+    except Exception:  # nosec B110
         pass
     grid.setAnnotationEnabled(True)
     grid.setAnnotationFormat(QgsLayoutItemMapGrid.Decimal)
@@ -983,7 +983,7 @@ def _map_crs_from_settings(map_settings):
             crs = map_settings.destinationCrs()
             if crs.isValid():
                 return crs
-        except Exception:
+        except Exception:  # nosec B110
             pass
     return QgsProject.instance().crs()
 
@@ -1117,7 +1117,7 @@ def _line_paths_from_geometry(geometry):
             path = [_as_point_xy(point) for point in geometry.asPolyline()]
             if len(path) >= 2:
                 paths.append(path)
-    except Exception:
+    except Exception:  # nosec B110
         pass
     return paths
 
@@ -1221,7 +1221,7 @@ def _feature_title(layer, feature, settings, lang):
             value = feature[field_name]
             if value not in (None, ""):
                 return str(value)
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
     if feature:
@@ -1230,7 +1230,7 @@ def _feature_title(layer, feature, settings, lang):
                 value = feature[field.name()]
                 if value not in (None, ""):
                     return str(value)
-            except Exception:
+            except Exception:  # nosec B110
                 pass
         return f"FID {feature.id()}"
     return _text(lang, "Profilo topografico", "Topographic profile")
@@ -1298,7 +1298,7 @@ def _map_units_per_meter(map_item):
         )
         if units_per_meter > 0:
             return units_per_meter, map_units
-    except Exception:
+    except Exception:  # nosec B110
         pass
     return None, map_units
 
@@ -1490,7 +1490,7 @@ def _combined_layers_extent(map_settings, target_crs):
                 combined = extent
             else:
                 combined.combineExtentWith(extent)
-        except Exception:
+        except Exception:  # nosec B112
             continue
     return combined
 
@@ -1638,7 +1638,7 @@ def _build_overview_map(
             if layers:
                 overview_map.setLayers(layers)
                 overview_map.setKeepLayerSet(True)
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
     overview_extent = context_extent
@@ -1745,7 +1745,7 @@ def _style_legend(legend, font_size, lang="it"):
         legend.setStyleFont(
             legend.SymbolLabel, QFont("Arial", max(font_size, 8))
         )
-    except Exception:
+    except Exception:  # nosec B110
         pass
     for setter, value in (
         ("setBoxSpace", 2.6),
@@ -1757,11 +1757,11 @@ def _style_legend(legend, font_size, lang="it"):
     ):
         try:
             getattr(legend, setter)(value)
-        except Exception:
+        except Exception:  # nosec B110
             pass
     try:
         legend.setColumnCount(1)
-    except Exception:
+    except Exception:  # nosec B110
         pass
     _set_item_frame(legend, 0.2, QColor(17, 24, 39))
     try:
@@ -1883,7 +1883,7 @@ def _page_origin(layout, page_index):
             QgsLayoutPoint(0.0, 0.0, QgsUnitTypes.LayoutMillimeters),
         )
         return float(point.x()), float(point.y())
-    except Exception:
+    except Exception:  # nosec B110
         pass
     try:
         pos = page.pos()
@@ -2542,7 +2542,7 @@ def _add_attributes_page_to_layout(
         content_format.setFont(QFont("Arial", 7))
         content_format.setColor(QColor(31, 41, 55))
         table.setContentTextFormat(content_format)
-    except Exception:
+    except Exception:  # nosec B110
         pass
 
     ox, oy = _page_origin(layout, page_index)

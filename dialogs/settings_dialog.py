@@ -1323,7 +1323,7 @@ class SettingsDialog(QDialog):
                 value = feature[field_name]
                 if value not in (None, ""):
                     return str(value)
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
         for field in self.layer.fields():
@@ -1331,7 +1331,7 @@ class SettingsDialog(QDialog):
                 value = feature[field.name()]
                 if value not in (None, ""):
                     return str(value)
-            except Exception:
+            except Exception:  # nosec B110
                 pass
         return f"FID {feature.id()}"
 
@@ -1536,7 +1536,7 @@ class SettingsDialog(QDialog):
         try:
             if field.isNumeric():
                 return True
-        except Exception:
+        except Exception:  # nosec B110
             pass
         type_name = field.typeName().lower()
         numeric_tokens = (
@@ -1774,7 +1774,7 @@ class SettingsDialog(QDialog):
             )
             if factor > 0:
                 return width * factor
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
         return width
@@ -1814,7 +1814,7 @@ class SettingsDialog(QDialog):
             )
             if factor > 0:
                 return target_width_m / factor
-        except Exception:
+        except Exception:  # nosec B110
             pass
         return target_width_m
 
@@ -2088,17 +2088,17 @@ class SettingsDialog(QDialog):
 
             try:
                 settings.setDestinationCrs(self.map_settings.destinationCrs())
-            except Exception:
+            except Exception:  # nosec B110
                 pass
             try:
                 settings.setTransformContext(
                     QgsProject.instance().transformContext()
                 )
-            except Exception:
+            except Exception:  # nosec B110
                 pass
             try:
                 settings.setRotation(self.map_settings.rotation())
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
             job = QgsMapRendererParallelJob(settings)

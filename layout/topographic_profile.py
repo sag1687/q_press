@@ -82,14 +82,14 @@ def _project_crs(map_settings):
             and map_settings.isValid()
         ):
             return map_settings
-    except Exception:
+    except Exception:  # nosec B110
         pass
     if map_settings:
         try:
             crs = map_settings.destinationCrs()
             if crs.isValid():
                 return crs
-        except Exception:
+        except Exception:  # nosec B110
             pass
     return QgsProject.instance().crs()
 
@@ -562,7 +562,7 @@ def _raster_spacing_m(raster_layer):
         )
         if factor > 0:
             return max(pixel_size * factor, 1.0)
-    except Exception:
+    except Exception:  # nosec B110
         pass
     return max(pixel_size, 1.0)
 

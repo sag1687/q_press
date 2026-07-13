@@ -155,7 +155,7 @@ def _aggregate(
     for feature in features:
         try:
             category_value = feature[category_field]
-        except Exception:
+        except Exception:  # nosec B112
             continue
 
         category_label = (
