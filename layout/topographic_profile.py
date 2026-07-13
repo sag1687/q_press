@@ -17,8 +17,20 @@ from qgis.core import (
     QgsUnitTypes,
 )  # noqa: E501
 from qgis.PyQt.QtCore import QRectF, Qt
-from qgis.PyQt.QtGui import QColor, QFont, QFontMetricsF, QImage, QPainter, QPen
-from ..qt_compat import ensure_qfont_compat, ensure_qimage_compat, ensure_qpainter_compat, ensure_qt_compat
+from qgis.PyQt.QtGui import (
+    QColor,
+    QFont,
+    QFontMetricsF,
+    QImage,
+    QPainter,
+    QPen,
+)
+from ..qt_compat import (
+    ensure_qfont_compat,
+    ensure_qimage_compat,
+    ensure_qpainter_compat,
+    ensure_qt_compat,
+)
 
 ensure_qt_compat(Qt)
 ensure_qfont_compat(QFont)
@@ -55,12 +67,20 @@ def _text(language, italian, english):
 
 
 def _slug(text):
-    return "".join(ch if ch.isalnum() else "_" for ch in str(text)).strip("_").lower() or "profile"
+    return (
+        "".join(ch if ch.isalnum() else "_" for ch in str(text))
+        .strip("_")
+        .lower()
+        or "profile"
+    )
 
 
 def _project_crs(map_settings):
     try:
-        if isinstance(map_settings, QgsCoordinateReferenceSystem) and map_settings.isValid():
+        if (
+            isinstance(map_settings, QgsCoordinateReferenceSystem)
+            and map_settings.isValid()
+        ):
             return map_settings
     except Exception:
         pass
@@ -93,11 +113,16 @@ def _map_distance(p1, p2):
 
 
 def _polyline_length(points):
-    return sum(_map_distance(previous, current) for previous, current in zip(points[:-1], points[1:]))
+    return sum(
+        _map_distance(previous, current)
+        for previous, current in zip(points[:-1], points[1:])
+    )
 
 
 def _sample_polyline(points, sample_count):
-    clean_points = [_as_point_xy(point) for point in points if point is not None]
+    clean_points = [
+        _as_point_xy(point) for point in points if point is not None
+    ]
     if len(clean_points) < 2:
         return clean_points
 
@@ -107,7 +132,8 @@ def _sample_polyline(points, sample_count):
 
     sample_count = max(int(sample_count), 2)
     segment_lengths = [
-        _map_distance(previous, current) for previous, current in zip(clean_points[:-1], clean_points[1:])
+        _map_distance(previous, current)
+        for previous, current in zip(clean_points[:-1], clean_points[1:])
     ]
     sampled = []
     segment_index = 0
@@ -115,7 +141,10 @@ def _sample_polyline(points, sample_count):
 
     for index in range(sample_count):
         target = total_length * (index / float(sample_count - 1))
-        while segment_index < len(segment_lengths) - 1 and covered + segment_lengths[segment_index] < target:
+        while (
+            segment_index < len(segment_lengths) - 1
+            and covered + segment_lengths[segment_index] < target
+        ):
             covered += segment_lengths[segment_index]
             segment_index += 1
 
@@ -137,14 +166,18 @@ def _to_wgs84(points, source_crs):
     if source_crs == wgs84:
         return points
 
-    transform = QgsCoordinateTransform(source_crs, wgs84, QgsProject.instance())
+    transform = QgsCoordinateTransform(
+        source_crs, wgs84, QgsProject.instance()
+    )
     return [transform.transform(point) for point in points]
 
 
 def _to_crs(points, source_crs, target_crs):
     if not target_crs or not target_crs.isValid() or source_crs == target_crs:
         return points
-    transform = QgsCoordinateTransform(source_crs, target_crs, QgsProject.instance())
+    transform = QgsCoordinateTransform(
+        source_crs, target_crs, QgsProject.instance()
+    )
     return [transform.transform(point) for point in points]
 
 
@@ -154,7 +187,10 @@ def _haversine_km(p1, p2):
     lat2 = math.radians(p2.y())
     d_lat = lat2 - lat1
     d_lon = math.radians(p2.x() - p1.x())
-    a = math.sin(d_lat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(d_lon / 2) ** 2
+    a = (
+        math.sin(d_lat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(d_lon / 2) ** 2
+    )
     return 2 * radius_km * math.asin(math.sqrt(a))
 
 
@@ -177,7 +213,13 @@ def _adaptive_sample_count(points, source_crs, preferred_spacing_m):
     return max(int(math.ceil(length_m / spacing)) + 1, 2)
 
 
-def _profile_points(rect, source_crs, profile_line=None, profile_points=None, preferred_spacing_m=None):
+def _profile_points(
+    rect,
+    source_crs,
+    profile_line=None,
+    profile_points=None,
+    preferred_spacing_m=None,
+):
     if profile_points and len(profile_points) >= 2:
         base_points = [_as_point_xy(point) for point in profile_points]
     elif profile_line:
@@ -188,11 +230,17 @@ def _profile_points(rect, source_crs, profile_line=None, profile_points=None, pr
     else:
         return []
 
-    sample_count = _adaptive_sample_count(base_points, source_crs, preferred_spacing_m or OPEN_TOPO_DATA_SPACING_M)
+    sample_count = _adaptive_sample_count(
+        base_points,
+        source_crs,
+        preferred_spacing_m or OPEN_TOPO_DATA_SPACING_M,
+    )
     return _sample_polyline(base_points, sample_count)
 
 
-def _online_profile_points(rect, source_crs, profile_line=None, profile_points=None):
+def _online_profile_points(
+    rect, source_crs, profile_line=None, profile_points=None
+):
     points = _profile_points(
         rect,
         source_crs,
@@ -234,7 +282,9 @@ def _retry_after_seconds(error):
     if not header:
         return OPEN_TOPO_DATA_REQUEST_INTERVAL_SECONDS
     try:
-        return min(max(float(header), 0.0), OPEN_TOPO_DATA_MAX_RETRY_AFTER_SECONDS)
+        return min(
+            max(float(header), 0.0), OPEN_TOPO_DATA_MAX_RETRY_AFTER_SECONDS
+        )
     except ValueError:
         pass
     try:
@@ -258,7 +308,9 @@ def _parse_retry_after_header(value):
         retry_time = parsedate_to_datetime(value)
         if retry_time.tzinfo is None:
             retry_time = retry_time.replace(tzinfo=timezone.utc)
-        return max((retry_time - datetime.now(timezone.utc)).total_seconds(), 0.0)
+        return max(
+            (retry_time - datetime.now(timezone.utc)).total_seconds(), 0.0
+        )
     except Exception:
         return None
 
@@ -287,14 +339,31 @@ def _capture_rate_limit_headers(headers, status_code=None):
     if headers is None:
         return
 
-    limit = _parse_int_header(_header_value(headers, ("X-RateLimit-Limit", "RateLimit-Limit", "X-Rate-Limit-Limit")))
+    limit = _parse_int_header(
+        _header_value(
+            headers,
+            ("X-RateLimit-Limit", "RateLimit-Limit", "X-Rate-Limit-Limit"),
+        )
+    )
     remaining = _parse_int_header(
-        _header_value(headers, ("X-RateLimit-Remaining", "RateLimit-Remaining", "X-Rate-Limit-Remaining"))
+        _header_value(
+            headers,
+            (
+                "X-RateLimit-Remaining",
+                "RateLimit-Remaining",
+                "X-Rate-Limit-Remaining",
+            ),
+        )
     )
     reset_at = _parse_reset_header(
-        _header_value(headers, ("X-RateLimit-Reset", "RateLimit-Reset", "X-Rate-Limit-Reset"))
+        _header_value(
+            headers,
+            ("X-RateLimit-Reset", "RateLimit-Reset", "X-Rate-Limit-Reset"),
+        )
     )
-    retry_after = _parse_retry_after_header(_header_value(headers, ("Retry-After", "X-Retry-After")))
+    retry_after = _parse_retry_after_header(
+        _header_value(headers, ("Retry-After", "X-Retry-After"))
+    )
 
     if limit is not None:
         _RATE_LIMIT_STATE["limit"] = limit
@@ -305,7 +374,9 @@ def _capture_rate_limit_headers(headers, status_code=None):
     if retry_after is not None:
         _RATE_LIMIT_STATE["retry_after_seconds"] = retry_after
         if reset_at is None:
-            _RATE_LIMIT_STATE["reset_at"] = datetime.now(timezone.utc).timestamp() + retry_after
+            _RATE_LIMIT_STATE["reset_at"] = (
+                datetime.now(timezone.utc).timestamp() + retry_after
+            )
     elif status_code != 429:
         _RATE_LIMIT_STATE["retry_after_seconds"] = None
 
@@ -339,7 +410,8 @@ def opentopodata_quota_status(language="it"):
         status = _text(
             language,
             f"Quota OpenTopoData nota: {remaining}/{limit} richieste residue.",
-            f"Known OpenTopoData quota: {remaining}/{limit} requests remaining.",
+            f"Known OpenTopoData quota: {remaining}/{limit} requests "
+            f"remaining.",
         )
     else:
         status = _text(
@@ -360,17 +432,29 @@ def opentopodata_quota_status(language="it"):
         details.append(
             _text(
                 language,
-                f"Ultimo rate limit: attendere circa {int(math.ceil(retry_after))} s.",
-                f"Last rate limit: wait about {int(math.ceil(retry_after))} s.",
+                f"Ultimo rate limit: attendere circa "
+                f"{int(math.ceil(retry_after))} s.",
+                f"Last rate limit: wait about "
+                f"{int(math.ceil(retry_after))} s.",
             )
         )
     if reset_at:
         details.append(
-            _text(language, f"Reset/riapertura stimata: {reset_at}.", f"Estimated reset/reopen: {reset_at}.")
+            _text(
+                language,
+                f"Reset/riapertura stimata: {reset_at}.",
+                f"Estimated reset/reopen: {reset_at}.",
+            )
         )
     if last_updated:
         updated = _format_time(last_updated, language)
-        details.append(_text(language, f"Aggiornato alle {updated}.", f"Updated at {updated}."))
+        details.append(
+            _text(
+                language,
+                f"Aggiornato alle {updated}.",
+                f"Updated at {updated}.",
+            )
+        )
     return " ".join(details)
 
 
@@ -383,8 +467,12 @@ def _open_topodata_payload(request):
     for attempt in range(OPEN_TOPO_DATA_MAX_RETRIES + 1):
         try:
             _RATE_LIMIT_STATE["session_requests"] += 1
-            with urllib.request.urlopen(request, timeout=25) as response:  # nosec B310
-                _capture_rate_limit_headers(response.headers, getattr(response, "status", None))
+            with urllib.request.urlopen(
+                request, timeout=25
+            ) as response:  # nosec B310
+                _capture_rate_limit_headers(
+                    response.headers, getattr(response, "status", None)
+                )
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             _capture_rate_limit_headers(error.headers, error.code)
@@ -394,16 +482,20 @@ def _open_topodata_payload(request):
             if attempt >= OPEN_TOPO_DATA_MAX_RETRIES:
                 raise OpenTopoDataRateLimitError(
                     "OpenTopoData ha risposto con HTTP 429: troppe richieste. "
-                    "Attendere qualche minuto oppure usare 'Genera Profilo da progetto' con un raster DTM/DEM locale."
+                    "Attendere qualche minuto oppure usare 'Genera Profilo da "
+                    "progetto' con un raster DTM/DEM locale."
                 )
             if wait_seconds > OPEN_TOPO_DATA_MAX_RETRY_AFTER_SECONDS:
                 raise OpenTopoDataRateLimitError(
-                    "OpenTopoData richiede un'attesa prima di nuove richieste. "
+                    "OpenTopoData richiede un'attesa prima di nuove "
+                    "richieste. "
                     "Il profilo online e' stato interrotto per non bloccare QGIS; usare un DTM/DEM locale o riprovare piu' tardi."  # noqa: E501
                 )
             _responsive_sleep(wait_seconds)
 
-    raise OpenTopoDataRateLimitError("OpenTopoData ha rifiutato temporaneamente le richieste.")
+    raise OpenTopoDataRateLimitError(
+        "OpenTopoData ha rifiutato temporaneamente le richieste."
+    )
 
 
 def _query_elevations(wgs84_points):
@@ -411,9 +503,13 @@ def _query_elevations(wgs84_points):
     for start in range(0, len(wgs84_points), OPEN_TOPO_DATA_CHUNK_SIZE):
         if start > 0:
             _responsive_sleep(OPEN_TOPO_DATA_REQUEST_INTERVAL_SECONDS)
-        chunk = wgs84_points[start:start + OPEN_TOPO_DATA_CHUNK_SIZE]
-        locations = "|".join(f"{point.y():.7f},{point.x():.7f}" for point in chunk)
-        query = urllib.parse.urlencode({"locations": locations, "interpolation": OPEN_TOPO_DATA_METHOD})
+        chunk = wgs84_points[start : start + OPEN_TOPO_DATA_CHUNK_SIZE]
+        locations = "|".join(
+            f"{point.y():.7f},{point.x():.7f}" for point in chunk
+        )
+        query = urllib.parse.urlencode(
+            {"locations": locations, "interpolation": OPEN_TOPO_DATA_METHOD}
+        )
         request = urllib.request.Request(
             f"{API_URL}?{query}",
             headers={"User-Agent": "Q-Press-QGIS-Plugin/1.9.2"},
@@ -421,11 +517,15 @@ def _query_elevations(wgs84_points):
         payload = _open_topodata_payload(request)
 
         if payload.get("status") != "OK":
-            raise RuntimeError(payload.get("error", "Invalid OpenTopoData response."))
+            raise RuntimeError(
+                payload.get("error", "Invalid OpenTopoData response.")
+            )
 
         for result in payload.get("results", []):
             elevation = result.get("elevation")
-            elevations.append(float(elevation) if elevation is not None else None)
+            elevations.append(
+                float(elevation) if elevation is not None else None
+            )
     return elevations
 
 
@@ -447,7 +547,8 @@ def _raster_spacing_m(raster_layer):
         return OPEN_TOPO_DATA_SPACING_M
     try:
         pixel_size = max(
-            abs(float(raster_layer.rasterUnitsPerPixelX())), abs(float(raster_layer.rasterUnitsPerPixelY()))
+            abs(float(raster_layer.rasterUnitsPerPixelX())),
+            abs(float(raster_layer.rasterUnitsPerPixelY())),
         )
     except Exception:
         return OPEN_TOPO_DATA_SPACING_M
@@ -456,7 +557,9 @@ def _raster_spacing_m(raster_layer):
     try:
         if crs.mapUnits() == QgsUnitTypes.DistanceDegrees:
             return max(pixel_size * 111320.0, 1.0)
-        factor = QgsUnitTypes.fromUnitToUnitFactor(crs.mapUnits(), QgsUnitTypes.DistanceMeters)
+        factor = QgsUnitTypes.fromUnitToUnitFactor(
+            crs.mapUnits(), QgsUnitTypes.DistanceMeters
+        )
         if factor > 0:
             return max(pixel_size * factor, 1.0)
     except Exception:
@@ -558,10 +661,19 @@ def _draw_fitted_text(
     for size in range(int(base_size), min_size - 1, -1):
         font = QFont("Arial", size, weight)
         metrics = QFontMetricsF(font)
-        lines = _wrap_text_pixels(text, metrics, rect.width()) if word_wrap else str(text or "").split("\n")
+        lines = (
+            _wrap_text_pixels(text, metrics, rect.width())
+            if word_wrap
+            else str(text or "").split("\n")
+        )
         line_height = metrics.lineSpacing()
-        widest = max((_text_width_pixels(metrics, line) for line in lines), default=0.0)
-        if len(lines) * line_height <= rect.height() and widest <= rect.width():
+        widest = max(
+            (_text_width_pixels(metrics, line) for line in lines), default=0.0
+        )
+        if (
+            len(lines) * line_height <= rect.height()
+            and widest <= rect.width()
+        ):
             painter.setFont(font)
             if color is not None:
                 painter.setPen(QPen(color, 1))
@@ -570,7 +682,11 @@ def _draw_fitted_text(
 
     font = QFont("Arial", min_size, weight)
     metrics = QFontMetricsF(font)
-    lines = _wrap_text_pixels(text, metrics, rect.width()) if word_wrap else str(text or "").split("\n")
+    lines = (
+        _wrap_text_pixels(text, metrics, rect.width())
+        if word_wrap
+        else str(text or "").split("\n")
+    )
     max_lines = max(int(rect.height() / max(metrics.lineSpacing(), 1.0)), 1)
     lines = _limit_lines_word_safe(lines, max_lines, metrics, rect.width())
     painter.setFont(font)
@@ -670,8 +786,14 @@ def _source_description(source_info, language):
     )
 
 
-def _render_profile(distances, elevations, output_dir, title, language="it", source_info=None):
-    valid = [(distance, elevation) for distance, elevation in zip(distances, elevations) if elevation is not None]
+def _render_profile(
+    distances, elevations, output_dir, title, language="it", source_info=None
+):
+    valid = [
+        (distance, elevation)
+        for distance, elevation in zip(distances, elevations)
+        if elevation is not None
+    ]
     if len(valid) < 2:
         return None
 
@@ -705,7 +827,8 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
     )
     trace_text = _text(
         language,
-        "Tracciato profilo: linea indicata dall'utente o geometria lineare intercettata.",
+        "Tracciato profilo: linea indicata dall'utente o geometria lineare "
+        "intercettata.",
         "Profile trace: user indicated line or intersected line geometry.",
     )
     source_text = f"{trace_text}\n{_source_description(source_info, language)}"
@@ -759,7 +882,9 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
         x = left + ((distance / max_dist) * width)
         y = top + height - (((elevation - min_axis) / elev_span) * height)
         if previous:
-            painter.drawLine(int(previous[0]), int(previous[1]), int(x), int(y))
+            painter.drawLine(
+                int(previous[0]), int(previous[1]), int(x), int(y)
+            )
         previous = (x, y)
 
     for index in range(6):
@@ -808,7 +933,9 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
     _draw_fitted_text(
         painter,
         QRectF(-230, 0, 460, 40),
-        _text(language, "Quota sul livello del mare", "Elevation Above Sea Level"),
+        _text(
+            language, "Quota sul livello del mare", "Elevation Above Sea Level"
+        ),
         22,
         True,
         axis,
@@ -829,7 +956,12 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
     for row in range(1, 3):
         y = table_y + row_h * row
         painter.drawLine(int(table_x), int(y), int(table_x + table_w), int(y))
-    painter.drawLine(int(table_x + label_w), int(table_y), int(table_x + label_w), int(table_y + table_h))
+    painter.drawLine(
+        int(table_x + label_w),
+        int(table_y),
+        int(table_x + label_w),
+        int(table_y + table_h),
+    )
 
     row_labels = [
         _text(language, "Picchetto", "Stake"),
@@ -856,7 +988,12 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
         column_x = table_x + label_w + (index * column_w)
         if index > 0:
             painter.setPen(QPen(station, 1))
-            painter.drawLine(int(column_x), int(table_y), int(column_x), int(table_y + table_h))
+            painter.drawLine(
+                int(column_x),
+                int(table_y),
+                int(column_x),
+                int(table_y + table_h),
+            )
         station_elevation = _interpolate_elevation(valid, distance)
         cell_rect = QRectF(column_x + 4, table_y, max(column_w - 8, 20), row_h)
         _draw_fitted_text(
@@ -872,7 +1009,9 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
         )
         _draw_fitted_text(
             painter,
-            QRectF(column_x + 4, table_y + row_h, max(column_w - 8, 20), row_h),
+            QRectF(
+                column_x + 4, table_y + row_h, max(column_w - 8, 20), row_h
+            ),
             f"{_format_number(distance, 3, language)} km",
             17,
             False,
@@ -884,7 +1023,12 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
         if station_elevation is not None:
             _draw_fitted_text(
                 painter,
-                QRectF(column_x + 4, table_y + (2 * row_h), max(column_w - 8, 20), row_h),
+                QRectF(
+                    column_x + 4,
+                    table_y + (2 * row_h),
+                    max(column_w - 8, 20),
+                    row_h,
+                ),
                 f"{_format_number(station_elevation, 1, language)} m",
                 17,
                 False,
@@ -895,14 +1039,20 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
             )
 
     summary_parts = [
-        f"{_text(language, 'Quota min', 'Min elevation')}: {_format_number(min_elev, 0, language)} m",
-        f"{_text(language, 'Quota max', 'Max elevation')}: {_format_number(max_elev, 0, language)} m",
-        f"{_text(language, 'Dislivello', 'Elevation gain')}: {_format_number(max_elev - min_elev, 0, language)} m",
-        f"{_text(language, 'Lunghezza', 'Length')}: {_format_number(max_dist, language=language)} km",
+        f"{_text(language, 'Quota min', 'Min elevation')}: "
+        f"{_format_number(min_elev, 0, language)} m",
+        f"{_text(language, 'Quota max', 'Max elevation')}: "
+        f"{_format_number(max_elev, 0, language)} m",
+        f"{_text(language, 'Dislivello', 'Elevation gain')}: "
+        f"{_format_number(max_elev - min_elev, 0, language)} m",
+        f"{_text(language, 'Lunghezza', 'Length')}: "
+        f"{_format_number(max_dist, language=language)} km",
     ]
     if source_info:
         sample_label = _text(language, "Campioni", "Samples")
-        summary_parts.append(f"{sample_label}: {source_info.get('samples', len(valid))}")
+        summary_parts.append(
+            f"{sample_label}: {source_info.get('samples', len(valid))}"
+        )
     summary = "    ".join(summary_parts)
     _draw_fitted_text(
         painter,
@@ -926,13 +1076,22 @@ def _render_profile(distances, elevations, output_dir, title, language="it", sou
     return path
 
 
-def _profile_data(rect, map_settings, profile_line=None, profile_points=None, source="online", raster_layer_id=None):
+def _profile_data(
+    rect,
+    map_settings,
+    profile_line=None,
+    profile_points=None,
+    source="online",
+    raster_layer_id=None,
+):
     has_trace = bool(profile_line) or bool(profile_points)
     if not has_trace and (not rect or rect.isEmpty() or not rect.isFinite()):
         return None
 
     source_crs = _project_crs(map_settings)
-    raster_layer = _project_raster_layer(raster_layer_id) if source == "project" else None
+    raster_layer = (
+        _project_raster_layer(raster_layer_id) if source == "project" else None
+    )
     if source == "project" and not raster_layer:
         return None
     if raster_layer:
@@ -955,7 +1114,9 @@ def _profile_data(rect, map_settings, profile_line=None, profile_points=None, so
 
     wgs84_points = _to_wgs84(points, source_crs)
     if raster_layer:
-        elevations = _sample_raster_elevations(points, source_crs, raster_layer)
+        elevations = _sample_raster_elevations(
+            points, source_crs, raster_layer
+        )
         source_info = {
             "type": "project",
             "name": raster_layer.name(),
@@ -1017,7 +1178,9 @@ def build_topographic_profile_image(
         return None
 
     distances, elevations, sample_count, source_info = data
-    image_path = _render_profile(distances, elevations, output_dir, title, language, source_info)
+    image_path = _render_profile(
+        distances, elevations, output_dir, title, language, source_info
+    )
     if not image_path:
         return None
     return {
@@ -1039,7 +1202,9 @@ def build_topographic_profile_images(
     source="online",
     raster_layer_id=None,
 ):
-    profile_titles = titles or [_text(language, "Profilo topografico", "Topographic profile")]
+    profile_titles = titles or [
+        _text(language, "Profilo topografico", "Topographic profile")
+    ]
     try:
         data = _profile_data(
             rect,
@@ -1076,7 +1241,8 @@ def build_topographic_profile_images(
             distances,
             elevations,
             output_dir,
-            title or _text(language, "Profilo topografico", "Topographic profile"),
+            title
+            or _text(language, "Profilo topografico", "Topographic profile"),
             language,
             source_info,
         )

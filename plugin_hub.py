@@ -55,72 +55,72 @@ PLUGIN_FAMILY = (
         "name": "SARIAG",
         "repo": "https://github.com/sag1687/sariag",
         "it": "Serie temporali InSAR Sentinel-1: mappe di spostamento "
-              "Est-Ovest e Verticale tramite SNAP e SNAPHU.",
+        "Est-Ovest e Verticale tramite SNAP e SNAPHU.",
         "en": "Sentinel-1 InSAR time series: East-West and Vertical "
-              "displacement maps through SNAP and SNAPHU.",
+        "displacement maps through SNAP and SNAPHU.",
     },
     {
         "key": "stac_browser",
         "name": "STAC Browser",
         "repo": "https://github.com/sag1687/stac_browser",
         "it": "Trova e scarica dati di osservazione della Terra dai "
-              "cataloghi STAC disegnando un'area sulla mappa.",
+        "cataloghi STAC disegnando un'area sulla mappa.",
         "en": "Finds and downloads Earth-observation data from STAC "
-              "catalogs by drawing an area on the map.",
+        "catalogs by drawing an area on the map.",
     },
     {
         "key": "geobridge",
         "name": "GeoBridge",
         "repo": "https://github.com/sag1687/geobridge",
         "it": "Client QGIS non ufficiale per i servizi IGM: conversione "
-              "di coordinate e di layer vettoriali.",
+        "di coordinate e di layer vettoriali.",
         "en": "Unofficial QGIS client for the IGM services: coordinate "
-              "and vector layer conversion.",
+        "and vector layer conversion.",
     },
     {
         "key": "quick_crs_fixer",
         "name": "Quick CRS Fixer",
         "repo": "https://github.com/sag1687/CRS_FIXER",
         "it": "Rileva e corregge automaticamente i problemi di CRS dei "
-              "layer, con suggerimenti EPSG intelligenti.",
+        "layer, con suggerimenti EPSG intelligenti.",
         "en": "Automatically detects and fixes layer CRS issues, with "
-              "smart EPSG suggestions.",
+        "smart EPSG suggestions.",
     },
     {
         "key": "geocsv_mapper",
         "name": "GeoCSV Mapper",
         "repo": "https://github.com/sag1687/GeoCSV-Mapper",
         "it": "Importa CSV con coordinate (anche DMS), anteprima su "
-              "OpenStreetMap e salvataggio in GeoPackage.",
+        "OpenStreetMap e salvataggio in GeoPackage.",
         "en": "Imports coordinate CSV files (DMS too), OpenStreetMap "
-              "preview and GeoPackage export.",
+        "preview and GeoPackage export.",
     },
     {
         "key": "q_press",
         "name": "Q-Press",
         "repo": "https://github.com/sag1687/q_press",
         "it": "Genera PDF cartografici professionali selezionando "
-              "l'area con Shift+Trascina sul canvas.",
+        "l'area con Shift+Trascina sul canvas.",
         "en": "Generates professional cartographic PDFs by selecting "
-              "the area with Shift+Drag on the canvas.",
+        "the area with Shift+Drag on the canvas.",
     },
     {
         "key": "qgis_ledger",
         "name": "QGIS Ledger",
         "repo": "https://github.com/sag1687/qgis_ledger",
         "it": "Versionamento in stile Git per QGIS: snapshot, diff "
-              "geometrico, rollback e sincronizzazione cloud.",
+        "geometrico, rollback e sincronizzazione cloud.",
         "en": "Git-like version control for QGIS: snapshots, geometric "
-              "diff, rollback and cloud synchronization.",
+        "diff, rollback and cloud synchronization.",
     },
     {
         "key": "taf_italia",
         "name": "TAF Italia",
         "repo": "https://github.com/sag1687/TAF_ITALIA_DOWNLOAD",
         "it": "Scarica e converte i Punti Fiduciali catastali (TAF) "
-              "dell'Agenzia delle Entrate in CSV/WGS84.",
+        "dell'Agenzia delle Entrate in CSV/WGS84.",
         "en": "Downloads and converts the cadastral Fiducial Points "
-              "(TAF) of the Italian Revenue Agency to CSV/WGS84.",
+        "(TAF) of the Italian Revenue Agency to CSV/WGS84.",
     },
 )
 
@@ -295,16 +295,16 @@ def family_html(self_key):
     embed inside an existing QTextBrowser, if preferred to the widget.
     """
     rows = "".join(
-        '<tr><td><b>%s</b></td><td>%s<br/>%s</td>'
+        "<tr><td><b>%s</b></td><td>%s<br/>%s</td>"
         '<td><a href="%s">GitHub</a></td></tr>'
         % (p["name"], p["it"], p["en"], p["repo"])
         for p in other_plugins(self_key)
     )
     return (
         "<h3>ALTRI PLUGIN DELL'AUTORE / MORE PLUGINS BY THE AUTHOR</h3>"
-        "<table><tr><th>Plugin</th><th>IT / EN</th><th>Link</th></tr>" +
-        rows +
-        "</table>"
+        "<table><tr><th>Plugin</th><th>IT / EN</th><th>Link</th></tr>"
+        + rows
+        + "</table>"
     )
 
 
@@ -355,8 +355,13 @@ class PluginFamilyWidget(QGroupBox):
             '%s — <a href="mailto:%s">%s</a> — '
             '<a href="%s">sinocloud.it</a> — '
             '<a href="%s">github.com/sag1687</a>'
-            % (AUTHOR_NAME, AUTHOR_EMAIL, AUTHOR_EMAIL,
-               AUTHOR_WEBSITE, AUTHOR_GITHUB)
+            % (
+                AUTHOR_NAME,
+                AUTHOR_EMAIL,
+                AUTHOR_EMAIL,
+                AUTHOR_WEBSITE,
+                AUTHOR_GITHUB,
+            )
         )
         layout.addWidget(self.lbl_author)
 
@@ -376,7 +381,7 @@ class PluginFamilyWidget(QGroupBox):
             entry = self._entries[index]
             desc = entry["en"] if self._lang == "en" else entry["it"]
             self.lbl_desc.setText(
-                "<b>%s</b> — %s<br/><a href=\"%s\">%s</a>"
+                '<b>%s</b> — %s<br/><a href="%s">%s</a>'
                 % (entry["name"], desc, entry["repo"], entry["repo"])
             )
 

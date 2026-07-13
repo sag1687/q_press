@@ -23,5 +23,7 @@ def export_to_pdf(layout, output_path):
     if res != QgsLayoutExporter.Success:
         raise Exception(f"Errore durante l'esportazione PDF: {res}")
     if not os.path.exists(output_path) or os.path.getsize(output_path) <= 0:
-        raise Exception("Errore durante l'esportazione PDF: file non creato o vuoto.")
+        raise Exception(
+            "Errore durante l'esportazione PDF: file non creato o vuoto."
+        )
     return output_path

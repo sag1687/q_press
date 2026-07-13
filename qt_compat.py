@@ -56,18 +56,30 @@ def ensure_qimage_compat(qimage):
 
 def ensure_qpainter_compat(qpainter):
     if hasattr(qpainter, "RenderHint"):
-        if not hasattr(qpainter, "Antialiasing") and hasattr(qpainter.RenderHint, "Antialiasing"):
+        if not hasattr(qpainter, "Antialiasing") and hasattr(
+            qpainter.RenderHint, "Antialiasing"
+        ):
             setattr(qpainter, "Antialiasing", qpainter.RenderHint.Antialiasing)
-        if not hasattr(qpainter, "TextAntialiasing") and hasattr(qpainter.RenderHint, "TextAntialiasing"):
-            setattr(qpainter, "TextAntialiasing", qpainter.RenderHint.TextAntialiasing)
+        if not hasattr(qpainter, "TextAntialiasing") and hasattr(
+            qpainter.RenderHint, "TextAntialiasing"
+        ):
+            setattr(
+                qpainter,
+                "TextAntialiasing",
+                qpainter.RenderHint.TextAntialiasing,
+            )
     return qpainter
 
 
 def ensure_qdialog_compat(qdialog):
     if hasattr(qdialog, "DialogCode"):
-        if not hasattr(qdialog, "Accepted") and hasattr(qdialog.DialogCode, "Accepted"):
+        if not hasattr(qdialog, "Accepted") and hasattr(
+            qdialog.DialogCode, "Accepted"
+        ):
             setattr(qdialog, "Accepted", qdialog.DialogCode.Accepted)
-        if not hasattr(qdialog, "Rejected") and hasattr(qdialog.DialogCode, "Rejected"):
+        if not hasattr(qdialog, "Rejected") and hasattr(
+            qdialog.DialogCode, "Rejected"
+        ):
             setattr(qdialog, "Rejected", qdialog.DialogCode.Rejected)
     return qdialog
 
@@ -75,7 +87,16 @@ def ensure_qdialog_compat(qdialog):
 def ensure_selection_mode_compat(widget_class):
     if not hasattr(widget_class, "SelectionMode"):
         return widget_class
-    for name in ("NoSelection", "SingleSelection", "MultiSelection", "ExtendedSelection"):
-        if not hasattr(widget_class, name) and hasattr(widget_class.SelectionMode, name):
-            setattr(widget_class, name, getattr(widget_class.SelectionMode, name))
+    for name in (
+        "NoSelection",
+        "SingleSelection",
+        "MultiSelection",
+        "ExtendedSelection",
+    ):
+        if not hasattr(widget_class, name) and hasattr(
+            widget_class.SelectionMode, name
+        ):
+            setattr(
+                widget_class, name, getattr(widget_class.SelectionMode, name)
+            )
     return widget_class

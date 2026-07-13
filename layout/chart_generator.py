@@ -3,8 +3,21 @@ from collections import defaultdict
 from datetime import datetime
 
 from qgis.PyQt.QtCore import QRectF, Qt
-from qgis.PyQt.QtGui import QColor, QFont, QFontMetricsF, QImage, QPainter, QPen, QBrush
-from ..qt_compat import ensure_qfont_compat, ensure_qimage_compat, ensure_qpainter_compat, ensure_qt_compat
+from qgis.PyQt.QtGui import (
+    QColor,
+    QFont,
+    QFontMetricsF,
+    QImage,
+    QPainter,
+    QPen,
+    QBrush,
+)
+from ..qt_compat import (
+    ensure_qfont_compat,
+    ensure_qimage_compat,
+    ensure_qpainter_compat,
+    ensure_qt_compat,
+)
 
 ensure_qt_compat(Qt)
 ensure_qfont_compat(QFont)
@@ -30,7 +43,12 @@ def _text(language, italian, english):
 
 
 def _slug(text):
-    return "".join(ch if ch.isalnum() else "_" for ch in str(text)).strip("_").lower() or "chart"
+    return (
+        "".join(ch if ch.isalnum() else "_" for ch in str(text))
+        .strip("_")
+        .lower()
+        or "chart"
+    )
 
 
 def _safe_float(value):
@@ -56,8 +74,8 @@ def _truncate(text, max_chars=28):
 
 
 def _format_number(value, decimals=2):
-    return f"{
-        value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    formatted = f"{value:,.{decimals}f}"
+    return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def _text_width(metrics, text):
@@ -68,7 +86,14 @@ def _text_width(metrics, text):
 
 
 def _draw_fitted_text(
-    painter, rect, text, size, bold=False, color=None, align=Qt.AlignLeft | Qt.AlignVCenter, min_size=8
+    painter,
+    rect,
+    text,
+    size,
+    bold=False,
+    color=None,
+    align=Qt.AlignLeft | Qt.AlignVCenter,
+    min_size=8,
 ):  # noqa: E501
     weight = QFont.Bold if bold else QFont.Normal
     raw = str(text or "")
@@ -94,8 +119,13 @@ def _draw_fitted_text(
                 lines.append(current)
         if not lines:
             lines = [""]
-        widest = max((_text_width(metrics, line) for line in lines), default=0.0)
-        if widest <= rect.width() and (len(lines) * metrics.lineSpacing()) <= rect.height():
+        widest = max(
+            (_text_width(metrics, line) for line in lines), default=0.0
+        )
+        if (
+            widest <= rect.width()
+            and (len(lines) * metrics.lineSpacing()) <= rect.height()
+        ):
             painter.setFont(font)
             painter.setPen(QPen(color or QColor(17, 24, 39), 1))
             painter.drawText(rect, align, "\n".join(lines))
@@ -109,8 +139,18 @@ def _draw_fitted_text(
     painter.drawText(rect, align, _truncate(raw, capacity))
 
 
-def _aggregate(features, category_field, value_field, aggregation, top_n, sort_order, language="it"):
-    stats = defaultdict(lambda: {"sum": 0.0, "count": 0, "min": None, "max": None})
+def _aggregate(
+    features,
+    category_field,
+    value_field,
+    aggregation,
+    top_n,
+    sort_order,
+    language="it",
+):
+    stats = defaultdict(
+        lambda: {"sum": 0.0, "count": 0, "min": None, "max": None}
+    )
 
     for feature in features:
         try:
@@ -118,7 +158,9 @@ def _aggregate(features, category_field, value_field, aggregation, top_n, sort_o
         except Exception:
             continue
 
-        category_label = str(category_value).strip() if category_value is not None else ""
+        category_label = (
+            str(category_value).strip() if category_value is not None else ""
+        )
         category_label = category_label or _text(language, "N/D", "N/A")
 
         if value_field:
@@ -134,8 +176,12 @@ def _aggregate(features, category_field, value_field, aggregation, top_n, sort_o
         bucket = stats[category_label]
         bucket["sum"] += numeric
         bucket["count"] += 1
-        bucket["min"] = numeric if bucket["min"] is None else min(bucket["min"], numeric)
-        bucket["max"] = numeric if bucket["max"] is None else max(bucket["max"], numeric)
+        bucket["min"] = (
+            numeric if bucket["min"] is None else min(bucket["min"], numeric)
+        )
+        bucket["max"] = (
+            numeric if bucket["max"] is None else max(bucket["max"], numeric)
+        )
 
     rows = []
     for label, bucket in stats.items():
@@ -160,14 +206,16 @@ def _aggregate(features, category_field, value_field, aggregation, top_n, sort_o
 
     if top_n and len(rows) > top_n:
         head = rows[: max(top_n - 1, 1)]
-        tail_sum = sum(value for _, value in rows[max(top_n - 1, 1):])
+        tail_sum = sum(value for _, value in rows[max(top_n - 1, 1) :])
         rows = head + [(_text(language, "Altri", "Other"), tail_sum)]
 
     total = sum(value for _, value in rows)
     return rows, total
 
 
-def _base_canvas(title, subtitle, field_label, width=1800, height=1200, language="it"):
+def _base_canvas(
+    title, subtitle, field_label, width=1800, height=1200, language="it"
+):
     image = QImage(width, height, QImage.Format_ARGB32)
     image.fill(QColor(255, 255, 255))
     painter = QPainter(image)
@@ -182,15 +230,31 @@ def _base_canvas(title, subtitle, field_label, width=1800, height=1200, language
     painter.drawRect(38, 38, width - 76, height - 76)
 
     _draw_fitted_text(
-        painter, QRectF(70, 58, width - 140, 52), title, 28, True, ink, Qt.AlignLeft | Qt.AlignVCenter, 18
+        painter,
+        QRectF(70, 58, width - 140, 52),
+        title,
+        28,
+        True,
+        ink,
+        Qt.AlignLeft | Qt.AlignVCenter,
+        18,
     )
     subtitle_text = subtitle or _text(
         language,
-        "Distribuzione statistica sulle sole geometrie presenti nell'area selezionata",
-        "Statistical distribution using only features inside the selected area",
+        "Distribuzione statistica sulle sole geometrie presenti nell'area "
+        "selezionata",
+        "Statistical distribution using only features inside the "
+        "selected area",
     )
     _draw_fitted_text(
-        painter, QRectF(70, 110, width - 140, 34), subtitle_text, 14, False, muted, Qt.AlignLeft | Qt.AlignVCenter, 10
+        painter,
+        QRectF(70, 110, width - 140, 34),
+        subtitle_text,
+        14,
+        False,
+        muted,
+        Qt.AlignLeft | Qt.AlignVCenter,
+        10,
     )
     painter.setPen(QPen(ink, 1))
     painter.drawLine(70, 158, width - 70, 158)
@@ -228,9 +292,20 @@ def _legend_text(label, value, total, show_percentages):
 
 
 def _render_pie(
-    rows, total, layer_name, output_dir, field_name, title, subtitle, show_labels, show_percentages, language="it"
+    rows,
+    total,
+    layer_name,
+    output_dir,
+    field_name,
+    title,
+    subtitle,
+    show_labels,
+    show_percentages,
+    language="it",
 ):  # noqa: E501
-    image, painter = _base_canvas(title, subtitle, field_name, language=language)
+    image, painter = _base_canvas(
+        title, subtitle, field_name, language=language
+    )
 
     pie_rect = QRectF(120, 245, 640, 640)
     start_angle = 90 * 16
@@ -256,7 +331,14 @@ def _render_pie(
         11,
     )
     _draw_fitted_text(
-        painter, QRectF(315, 546, 250, 50), _format_number(total), 20, True, QColor(17, 24, 39), Qt.AlignCenter, 12
+        painter,
+        QRectF(315, 546, 250, 50),
+        _format_number(total),
+        20,
+        True,
+        QColor(17, 24, 39),
+        Qt.AlignCenter,
+        12,
     )
 
     legend_x = 850
@@ -284,8 +366,10 @@ def _render_pie(
             QRectF(120, 900, 1500, 36),
             _text(
                 language,
-                "Etichette e percentuali calcolate sui dati filtrati dall'area selezionata.",
-                "Labels and percentages calculated on data filtered by the selected area.",
+                "Etichette e percentuali calcolate sui dati filtrati "
+                "dall'area selezionata.",
+                "Labels and percentages calculated on data filtered by the "
+                "selected area.",
             ),
             11,
             False,
@@ -299,10 +383,21 @@ def _render_pie(
 
 
 def _render_bar(
-    rows, total, layer_name, output_dir, field_name, title, subtitle, show_labels, show_percentages, language="it"
+    rows,
+    total,
+    layer_name,
+    output_dir,
+    field_name,
+    title,
+    subtitle,
+    show_labels,
+    show_percentages,
+    language="it",
 ):  # noqa: E501
     del show_labels
-    image, painter = _base_canvas(title, subtitle, field_name, language=language)
+    image, painter = _base_canvas(
+        title, subtitle, field_name, language=language
+    )
 
     chart_x = 420
     chart_y = 240
@@ -317,11 +412,20 @@ def _render_bar(
             break
         painter.setPen(QPen(QColor(17, 24, 39), 1))
         _draw_fitted_text(
-            painter, QRectF(90, y, 300, 34), label, 13, False, QColor(17, 24, 39), Qt.AlignRight | Qt.AlignVCenter, 9
+            painter,
+            QRectF(90, y, 300, 34),
+            label,
+            13,
+            False,
+            QColor(17, 24, 39),
+            Qt.AlignRight | Qt.AlignVCenter,
+            9,
         )
         painter.drawRect(chart_x, y + 5, chart_w, 28)
         fill_w = (value / max_value) * chart_w
-        painter.fillRect(QRectF(chart_x, y + 5, fill_w, 28), PALETTE[idx % len(PALETTE)])
+        painter.fillRect(
+            QRectF(chart_x, y + 5, fill_w, 28), PALETTE[idx % len(PALETTE)]
+        )
         value_text = _format_number(value)
         if show_percentages and total > 0:
             value_text = f"{value_text} ({(value / total) * 100:.1f}%)"
@@ -340,8 +444,19 @@ def _render_bar(
     return _save(image, output_dir, "bar", layer_name, field_name)
 
 
-def _render_percent(rows, total, layer_name, output_dir, field_name, title, subtitle, language="it"):
-    image, painter = _base_canvas(title, subtitle, field_name, language=language)
+def _render_percent(
+    rows,
+    total,
+    layer_name,
+    output_dir,
+    field_name,
+    title,
+    subtitle,
+    language="it",
+):
+    image, painter = _base_canvas(
+        title, subtitle, field_name, language=language
+    )
 
     left = 120
     top = 240
@@ -355,11 +470,20 @@ def _render_percent(rows, total, layer_name, output_dir, field_name, title, subt
         pct = 0 if total <= 0 else (value / total) * 100
         painter.setPen(QPen(QColor(17, 24, 39), 1))
         _draw_fitted_text(
-            painter, QRectF(left, y, 340, 34), label, 14, False, QColor(17, 24, 39), Qt.AlignLeft | Qt.AlignVCenter, 9
+            painter,
+            QRectF(left, y, 340, 34),
+            label,
+            14,
+            False,
+            QColor(17, 24, 39),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            9,
         )
         painter.drawRect(int(left + 380), int(y + 5), int(bar_w), 28)
         fill_w = max(0, min(bar_w, (pct / 100.0) * bar_w))
-        painter.fillRect(QRectF(left + 380, y + 5, fill_w, 28), PALETTE[idx % len(PALETTE)])
+        painter.fillRect(
+            QRectF(left + 380, y + 5, fill_w, 28), PALETTE[idx % len(PALETTE)]
+        )
         _draw_fitted_text(
             painter,
             QRectF(left + 380 + bar_w + 18, y, 190, 34),
@@ -413,7 +537,9 @@ def build_dashboard_images(
         if not rows:
             continue
 
-        title = chart_title or _text(language, "Dashboard cartografico", "Cartographic dashboard")
+        title = chart_title or _text(
+            language, "Dashboard cartografico", "Cartographic dashboard"
+        )
         if len(fields) > 1:
             title = f"{title} - {field_name}"
 

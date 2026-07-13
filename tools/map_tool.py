@@ -10,7 +10,8 @@ ensure_qt_compat(Qt)
 
 class QpressMapTool(QgsMapTool):
     """
-    QpressMapTool: Tool di QGIS per selezionare un'area di interesse sul canvas.
+    QpressMapTool: Tool di QGIS per selezionare un'area di interesse sul
+    canvas.
 
     Gestisce l'interazione utente tramite Shift + Mouse Drag per disegnare
     una rubber band e, al rilascio, emette l'estensione (QgsRectangle)
@@ -50,7 +51,8 @@ class QpressMapTool(QgsMapTool):
         self.start_point = None
 
     def deactivate(self):
-        """Disattiva il tool, ripulisce la rubber band e ripristina lo stato."""
+        """Disattiva il tool, ripulisce la rubber band e ripristina lo
+        stato."""
         if self.rubber_band:
             self.rubber_band.reset()
             self.rubber_band = None
@@ -60,7 +62,11 @@ class QpressMapTool(QgsMapTool):
 
     def _create_rubber_band(self):
         """Crea e configura la rubber band (rettangolo visivo) sul canvas."""
-        geometry_type = Qgis.GeometryType.Line if self.draw_mode == "profile" else Qgis.GeometryType.Polygon
+        geometry_type = (
+            Qgis.GeometryType.Line
+            if self.draw_mode == "profile"
+            else Qgis.GeometryType.Polygon
+        )
         rb = QgsRubberBand(self.canvas, geometry_type)
         if self.draw_mode == "profile":
             rb.setColor(QColor(220, 38, 38, 220))
@@ -75,10 +81,13 @@ class QpressMapTool(QgsMapTool):
     def canvasPressEvent(self, e):
         """
         Gestisce l'evento di pressione del mouse.
-        Avvia la selezione solo se il tasto Shift è premuto insieme al click sinistro.
+        Avvia la selezione solo se il tasto Shift è premuto insieme al
+        click sinistro.
         """
         try:
-            if e.button() == Qt.LeftButton and (e.modifiers() & Qt.ShiftModifier):
+            if e.button() == Qt.LeftButton and (
+                e.modifiers() & Qt.ShiftModifier
+            ):
                 self.is_dragging = True
                 self.start_point = self.toMapCoordinates(e.pos())
 
@@ -101,10 +110,14 @@ class QpressMapTool(QgsMapTool):
 
                 if self.draw_mode == "profile":
                     line = [self.start_point, current_point]
-                    self.rubber_band.setToGeometry(QgsGeometry.fromPolylineXY(line), None)
+                    self.rubber_band.setToGeometry(
+                        QgsGeometry.fromPolylineXY(line), None
+                    )
                 else:
                     rect = QgsRectangle(self.start_point, current_point)
-                    self.rubber_band.setToGeometry(QgsGeometry.fromRect(rect), None)
+                    self.rubber_band.setToGeometry(
+                        QgsGeometry.fromRect(rect), None
+                    )
         except Exception as ex:
             print(f"Errore in canvasMoveEvent: {ex}")
             traceback.print_exc()
@@ -112,7 +125,8 @@ class QpressMapTool(QgsMapTool):
     def canvasReleaseEvent(self, e):
         """
         Gestisce il rilascio del tasto del mouse.
-        Finalizza il rettangolo, emette il segnale con il QgsRectangle e pulisce.
+        Finalizza il rettangolo, emette il segnale con il QgsRectangle e
+        pulisce.
         """
         try:
             if e.button() == Qt.LeftButton and self.is_dragging:
@@ -124,7 +138,11 @@ class QpressMapTool(QgsMapTool):
 
                 dx = abs(self.start_point.x() - end_point.x())
                 dy = abs(self.start_point.y() - end_point.y())
-                valid_drag = (dx > 0 or dy > 0) if self.draw_mode == "profile" else not rect.isEmpty()
+                valid_drag = (
+                    (dx > 0 or dy > 0)
+                    if self.draw_mode == "profile"
+                    else not rect.isEmpty()
+                )
                 if valid_drag:
                     self.rectangleDrawn.emit(rect)
                     self.drawCompleted.emit(rect, self.start_point, end_point)

@@ -42,7 +42,11 @@ from qgis.PyQt.QtGui import QColor, QFont
 from ..qt_compat import ensure_qfont_compat, ensure_qt_compat
 from .chart_generator import build_dashboard_images
 from .pdf_exporter import export_to_pdf
-from .topographic_profile import DATASET_STACK, OPEN_TOPO_DATA_METHOD, build_topographic_profile_images
+from .topographic_profile import (
+    DATASET_STACK,
+    OPEN_TOPO_DATA_METHOD,
+    build_topographic_profile_images,
+)
 
 ensure_qt_compat(Qt)
 ensure_qfont_compat(QFont)
@@ -76,7 +80,9 @@ def _set_item_frame(item, width_mm, color):
         pass
 
 
-def _add_rectangle(layout, x, y, w, h, fill_color, border_color, border_mm=0.2):
+def _add_rectangle(
+    layout, x, y, w, h, fill_color, border_color, border_mm=0.2
+):
     shape = QgsLayoutItemShape(layout)
     shape.setShapeType(QgsLayoutItemShape.Rectangle)
     shape.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
@@ -94,10 +100,24 @@ def _add_rectangle(layout, x, y, w, h, fill_color, border_color, border_mm=0.2):
     return shape
 
 
-def _add_label(layout, text, x, y, w, h, font_size, bold, color, halign=Qt.AlignLeft, valign=Qt.AlignVCenter):
+def _add_label(
+    layout,
+    text,
+    x,
+    y,
+    w,
+    h,
+    font_size,
+    bold,
+    color,
+    halign=Qt.AlignLeft,
+    valign=Qt.AlignVCenter,
+):
     item = QgsLayoutItemLabel(layout)
     item.setText(text)
-    item.setFont(QFont("Arial", font_size, QFont.Bold if bold else QFont.Normal))
+    item.setFont(
+        QFont("Arial", font_size, QFont.Bold if bold else QFont.Normal)
+    )
     item.setFontColor(color)
     item.setHAlign(halign)
     item.setVAlign(valign)
@@ -141,12 +161,20 @@ def _wrap_text_for_box(text, box_width_mm, font_size):
     return "\n".join(lines), len(lines)
 
 
-def _fit_text_for_box(text, box_width_mm, box_height_mm, base_size, min_size, bold=False):
+def _fit_text_for_box(
+    text, box_width_mm, box_height_mm, base_size, min_size, bold=False
+):
     raw = str(text or "")
     min_size = max(int(min_size), 5)
     for size in range(int(base_size), min_size - 1, -1):
-        longest_word = max((word for word in raw.replace("\n", " ").split()), key=len, default="")
-        if _estimated_long_word_width(longest_word, size) > max(box_width_mm - 2.4, 1.0):
+        longest_word = max(
+            (word for word in raw.replace("\n", " ").split()),
+            key=len,
+            default="",
+        )
+        if _estimated_long_word_width(longest_word, size) > max(
+            box_width_mm - 2.4, 1.0
+        ):
             continue
         wrapped, line_count = _wrap_text_for_box(raw, box_width_mm, size)
         line_height = max(size * 0.42, 2.8)
@@ -154,12 +182,16 @@ def _fit_text_for_box(text, box_width_mm, box_height_mm, base_size, min_size, bo
             return wrapped, size, line_count
 
     wrapped, line_count = _wrap_text_for_box(raw, box_width_mm, min_size)
-    max_lines = max(int(max(box_height_mm - 1.0, 1.0) / max(min_size * 0.42, 2.8)), 1)
+    max_lines = max(
+        int(max(box_height_mm - 1.0, 1.0) / max(min_size * 0.42, 2.8)), 1
+    )
     lines = wrapped.split("\n")
     if len(lines) > max_lines:
         lines = lines[:max_lines]
         if lines:
-            lines[-1] = _append_ellipsis_word_safe(lines[-1], _estimated_char_capacity(box_width_mm, min_size))
+            lines[-1] = _append_ellipsis_word_safe(
+                lines[-1], _estimated_char_capacity(box_width_mm, min_size)
+            )
     return "\n".join(lines), min_size, min(len(lines), max_lines)
 
 
@@ -191,8 +223,22 @@ def _add_fitted_label(
     valign=Qt.AlignVCenter,
     min_size=7,
 ):
-    fitted_text, fitted_size, _line_count = _fit_text_for_box(text, w, h, font_size, min_size, bold)
-    return _add_label(layout, fitted_text, x, y, w, h, fitted_size, bold, color, halign, valign)
+    fitted_text, fitted_size, _line_count = _fit_text_for_box(
+        text, w, h, font_size, min_size, bold
+    )
+    return _add_label(
+        layout,
+        fitted_text,
+        x,
+        y,
+        w,
+        h,
+        fitted_size,
+        bold,
+        color,
+        halign,
+        valign,
+    )
 
 
 def _text_fits_single_line(text, box_width_mm, font_size):
@@ -201,7 +247,9 @@ def _text_fits_single_line(text, box_width_mm, font_size):
         return True
     capacity = _estimated_char_capacity(box_width_mm, font_size)
     longest_word = max(raw.split(), key=len, default="")
-    return len(raw) <= capacity and _estimated_long_word_width(longest_word, font_size) <= max(box_width_mm - 2.4, 1.0)
+    return len(raw) <= capacity and _estimated_long_word_width(
+        longest_word, font_size
+    ) <= max(box_width_mm - 2.4, 1.0)
 
 
 def _apply_grid_text_format(grid, font_size, color):
@@ -268,7 +316,9 @@ def _is_custom_format(fmt):
     return str(fmt or "").lower() in ("custom", "personalizzato")
 
 
-def get_page_dimensions(fmt, orientation, custom_width_mm=None, custom_height_mm=None):
+def get_page_dimensions(
+    fmt, orientation, custom_width_mm=None, custom_height_mm=None
+):
     formats = {"A4": (297, 210), "A3": (420, 297), "A0": (1189, 841)}
     if _is_custom_format(fmt):
         try:
@@ -378,8 +428,8 @@ def _format_coord(value):
         decimals = 1
     else:
         decimals = 3
-    return f"{
-        value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    formatted = f"{value:,.{decimals}f}"
+    return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def _text(lang, italian, english):
@@ -397,12 +447,16 @@ def _adaptive_font_size(text, box_width_mm, base_size, min_size):
     return max(min_size, base_size - shrink)
 
 
-def _build_metadata_text(layer_name, crs_authid, extent, scale_value, lang="it"):
+def _build_metadata_text(
+    layer_name, crs_authid, extent, scale_value, lang="it"
+):
     return (
         f"{_text(lang, 'Layer', 'Layer')}: {layer_name}\n"
         f"CRS: {crs_authid}\n"
-        f"X min/max: {_format_coord(extent.xMinimum())} / {_format_coord(extent.xMaximum())}\n"
-        f"Y min/max: {_format_coord(extent.yMinimum())} / {_format_coord(extent.yMaximum())}\n"
+        f"X min/max: {_format_coord(extent.xMinimum())} / "
+        f"{_format_coord(extent.xMaximum())}\n"
+        f"Y min/max: {_format_coord(extent.yMinimum())} / "
+        f"{_format_coord(extent.yMaximum())}\n"
         f"{_text(lang, 'Data', 'Date')}: {datetime.now().strftime('%d/%m/%Y')}"
     )
 
@@ -411,8 +465,16 @@ def _metadata_rows(layer_name, crs_authid, extent, lang="it"):
     return [
         (_text(lang, "Layer", "Layer"), layer_name),
         ("CRS", crs_authid),
-        ("X", f"{_format_coord(extent.xMinimum())} / {_format_coord(extent.xMaximum())}"),
-        ("Y", f"{_format_coord(extent.yMinimum())} / {_format_coord(extent.yMaximum())}"),
+        (
+            "X",
+            f"{_format_coord(extent.xMinimum())} / "
+            f"{_format_coord(extent.xMaximum())}",
+        ),
+        (
+            "Y",
+            f"{_format_coord(extent.yMinimum())} / "
+            f"{_format_coord(extent.yMaximum())}",
+        ),
         (_text(lang, "Data", "Date"), datetime.now().strftime("%d/%m/%Y")),
     ]
 
@@ -440,11 +502,20 @@ def _add_section_frame(layout, title, x, y, w, h, font_size, lang="it"):
         min_size=6,
     )
     pad = 1.4
-    return x + pad, y + header_h + pad, max(w - (2.0 * pad), 1.0), max(h - header_h - (2.0 * pad), 1.0)
+    return (
+        x + pad,
+        y + header_h + pad,
+        max(w - (2.0 * pad), 1.0),
+        max(h - header_h - (2.0 * pad), 1.0),
+    )
 
 
 def _add_key_value_table(layout, rows, x, y, w, h, font_size):
-    clean_rows = [(str(key), str(value or "")) for key, value in rows if str(value or "").strip()]
+    clean_rows = [
+        (str(key), str(value or ""))
+        for key, value in rows
+        if str(value or "").strip()
+    ]
     if not clean_rows or w <= 18.0 or h <= 8.0:
         return
     ink = QColor(17, 24, 39)
@@ -454,9 +525,27 @@ def _add_key_value_table(layout, rows, x, y, w, h, font_size):
     for index, (key, value) in enumerate(clean_rows):
         row_y = y + (index * row_h)
         if index % 2 == 0:
-            _add_rectangle(layout, x, row_y, w, row_h, QColor(248, 250, 252), QColor(248, 250, 252), 0.0)
+            _add_rectangle(
+                layout,
+                x,
+                row_y,
+                w,
+                row_h,
+                QColor(248, 250, 252),
+                QColor(248, 250, 252),
+                0.0,
+            )
         if index > 0:
-            _add_rectangle(layout, x, row_y, w, 0.08, QColor(226, 232, 240), QColor(226, 232, 240), 0.0)
+            _add_rectangle(
+                layout,
+                x,
+                row_y,
+                w,
+                0.08,
+                QColor(226, 232, 240),
+                QColor(226, 232, 240),
+                0.0,
+            )
         _add_fitted_label(
             layout,
             key,
@@ -488,7 +577,11 @@ def _add_key_value_table(layout, rows, x, y, w, h, font_size):
 
 
 def _compact_attribute_fields(layer, max_fields):
-    fields = [field.name() for field in layer.fields() if field.name().lower() != "geometry"]
+    fields = [
+        field.name()
+        for field in layer.fields()
+        if field.name().lower() != "geometry"
+    ]
     priority_tokens = ("id", "name", "nome", "cod", "tipo", "class")
     priority = []
     regular = []
@@ -510,8 +603,15 @@ def _value_text(value, max_chars=34):
     return _append_ellipsis_word_safe(text, max_chars)
 
 
-def _add_compact_attribute_block(layout, layer, features, x, y, w, h, font_size, lang="it", show_title=True):
-    if layer.type() != QgsMapLayerType.VectorLayer or not features or w <= 20.0 or h <= 16.0:
+def _add_compact_attribute_block(
+    layout, layer, features, x, y, w, h, font_size, lang="it", show_title=True
+):
+    if (
+        layer.type() != QgsMapLayerType.VectorLayer
+        or not features
+        or w <= 20.0
+        or h <= 16.0
+    ):
         return False
 
     title_h = max(font_size * 0.75, 4.2) if show_title else 0.0
@@ -539,7 +639,10 @@ def _add_compact_attribute_block(layout, layer, features, x, y, w, h, font_size,
 
     complete = len(features) == 1 and total_fields <= len(fields)
     if complete:
-        complete = all(_text_fits_single_line(row_text, w, row_font_size) for _field, _value, row_text in raw_rows)
+        complete = all(
+            _text_fits_single_line(row_text, w, row_font_size)
+            for _field, _value, row_text in raw_rows
+        )
 
     title = _text(lang, "ATTRIBUTI", "ATTRIBUTES")
     if not complete:
@@ -564,7 +667,16 @@ def _add_compact_attribute_block(layout, layer, features, x, y, w, h, font_size,
             Qt.AlignVCenter,
             min_size=max(font_size - 1, 7),
         )
-        _add_rectangle(layout, x, y + title_h + 0.6, w, 0.18, QColor(17, 24, 39), QColor(17, 24, 39), 0.0)
+        _add_rectangle(
+            layout,
+            x,
+            y + title_h + 0.6,
+            w,
+            0.18,
+            QColor(17, 24, 39),
+            QColor(17, 24, 39),
+            0.0,
+        )
 
     cursor_y = y + title_h + (1.2 if show_title else 0.0)
     row_capacity = max(_estimated_char_capacity(w, row_font_size), 12)
@@ -596,19 +708,43 @@ def _add_ruler_icon(layout, x, y, w, h, ink):
         return
     body_h = max(h * 0.42, 2.2)
     body_y = y + ((h - body_h) / 2.0)
-    _add_rectangle(layout, x, body_y, w, body_h, QColor(255, 255, 255), ink, 0.16)
+    _add_rectangle(
+        layout, x, body_y, w, body_h, QColor(255, 255, 255), ink, 0.16
+    )
     segment_w = w / 4.0
     for index in range(4):
         fill = ink if index % 2 == 0 else QColor(255, 255, 255)
-        _add_rectangle(layout, x + (index * segment_w), body_y, segment_w, body_h, fill, ink, 0.08)
+        _add_rectangle(
+            layout,
+            x + (index * segment_w),
+            body_y,
+            segment_w,
+            body_h,
+            fill,
+            ink,
+            0.08,
+        )
     for index in range(5):
         tick_h = body_h * (0.95 if index in (0, 4) else 0.60)
         tick_w = max(w * 0.018, 0.12)
-        tick_x = min(max(x + (index * segment_w) - (tick_w / 2.0), x), x + w - tick_w)
-        _add_rectangle(layout, tick_x, body_y - tick_h * 0.65, tick_w, tick_h, ink, ink, 0.0)
+        tick_x = min(
+            max(x + (index * segment_w) - (tick_w / 2.0), x), x + w - tick_w
+        )
+        _add_rectangle(
+            layout,
+            tick_x,
+            body_y - tick_h * 0.65,
+            tick_w,
+            tick_h,
+            ink,
+            ink,
+            0.0,
+        )
 
 
-def _add_scale_indicator(layout, x, y, w, h, scale_value, font_size, lang="it"):
+def _add_scale_indicator(
+    layout, x, y, w, h, scale_value, font_size, lang="it"
+):
     if w <= 30.0 or h <= 6.0:
         return None
     ink = QColor(17, 24, 39)
@@ -734,10 +870,18 @@ def _configure_primary_grid(map_item, interval, font_size):
     grid.setAnnotationEnabled(True)
     grid.setAnnotationFormat(QgsLayoutItemMapGrid.Decimal)
     grid.setAnnotationPrecision(0 if interval >= 10 else 1)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Left)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Bottom)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Right)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Top)
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Left
+    )
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Bottom
+    )
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Right
+    )
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Top
+    )
     try:
         grid.setAnnotationFrameDistance(1.5)
     except AttributeError:
@@ -746,7 +890,9 @@ def _configure_primary_grid(map_item, interval, font_size):
     map_item.grids().addGrid(grid)
 
 
-def _configure_secondary_grid(map_item, project_crs_authid, interval, font_size):
+def _configure_secondary_grid(
+    map_item, project_crs_authid, interval, font_size
+):
     if project_crs_authid == "EPSG:4326":
         return
 
@@ -763,10 +909,18 @@ def _configure_secondary_grid(map_item, project_crs_authid, interval, font_size)
     grid.setAnnotationEnabled(False)
     grid.setAnnotationFormat(QgsLayoutItemMapGrid.DegreeMinuteSecond)
     grid.setAnnotationPrecision(0)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.HideAll, QgsLayoutItemMapGrid.Left)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.HideAll, QgsLayoutItemMapGrid.Bottom)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Right)
-    grid.setAnnotationDisplay(QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Top)
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.HideAll, QgsLayoutItemMapGrid.Left
+    )
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.HideAll, QgsLayoutItemMapGrid.Bottom
+    )
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Right
+    )
+    grid.setAnnotationDisplay(
+        QgsLayoutItemMapGrid.ShowAll, QgsLayoutItemMapGrid.Top
+    )
     try:
         grid.setAnnotationFrameDistance(1.5)
     except AttributeError:
@@ -787,11 +941,17 @@ def _selection_rect_for_layer(layer, rect, map_settings):
             source_crs = QgsProject.instance().crs()
 
     layer_crs = layer.crs()
-    if not source_crs.isValid() or not layer_crs.isValid() or source_crs == layer_crs:
+    if (
+        not source_crs.isValid()
+        or not layer_crs.isValid()
+        or source_crs == layer_crs
+    ):
         return rect
 
     try:
-        transform = QgsCoordinateTransform(source_crs, layer_crs, QgsProject.instance())
+        transform = QgsCoordinateTransform(
+            source_crs, layer_crs, QgsProject.instance()
+        )
         return transform.transformBoundingBox(rect)
     except Exception:
         return rect
@@ -835,10 +995,14 @@ def _as_point_xy(point):
 
 
 def _transform_points(points, source_crs, target_crs):
-    clean_points = [_as_point_xy(point) for point in points if point is not None]
+    clean_points = [
+        _as_point_xy(point) for point in points if point is not None
+    ]
     if not target_crs or not target_crs.isValid() or source_crs == target_crs:
         return clean_points
-    transform = QgsCoordinateTransform(source_crs, target_crs, QgsProject.instance())
+    transform = QgsCoordinateTransform(
+        source_crs, target_crs, QgsProject.instance()
+    )
     return [transform.transform(point) for point in clean_points]
 
 
@@ -852,7 +1016,9 @@ def _project_point_to_segment(point, start, end):
     segment_sq = (dx * dx) + (dy * dy)
     if segment_sq <= 0:
         return start, 0.0, _distance_xy(point, start)
-    ratio = ((point.x() - start.x()) * dx + (point.y() - start.y()) * dy) / segment_sq
+    ratio = (
+        (point.x() - start.x()) * dx + (point.y() - start.y()) * dy
+    ) / segment_sq
     ratio = min(max(ratio, 0.0), 1.0)
     projected = QgsPointXY(start.x() + (dx * ratio), start.y() + (dy * ratio))
     return projected, ratio, _distance_xy(point, projected)
@@ -871,7 +1037,9 @@ def _locate_point_on_polyline(points, point):
     measures = _polyline_measure(points)
     best = None
     for index, (start, end) in enumerate(zip(points[:-1], points[1:])):
-        projected, ratio, distance = _project_point_to_segment(point, start, end)
+        projected, ratio, distance = _project_point_to_segment(
+            point, start, end
+        )
         measure = measures[index] + (_distance_xy(start, end) * ratio)
         candidate = (distance, measure, projected)
         if best is None or candidate[0] < best[0]:
@@ -965,8 +1133,13 @@ def _profile_trace_from_layer(layer, profile_line, map_settings):
 
     source_crs = _map_crs_from_settings(map_settings)
     layer_crs = layer.crs()
-    profile_map_points = [_as_point_xy(profile_line[0]), _as_point_xy(profile_line[1])]
-    profile_layer_points = _transform_points(profile_map_points, source_crs, layer_crs)
+    profile_map_points = [
+        _as_point_xy(profile_line[0]),
+        _as_point_xy(profile_line[1]),
+    ]
+    profile_layer_points = _transform_points(
+        profile_map_points, source_crs, layer_crs
+    )
     if len(profile_layer_points) < 2:
         return None
 
@@ -993,7 +1166,11 @@ def _profile_trace_from_layer(layer, profile_line, map_settings):
             best_geometry = geometry
             best_distance = distance
 
-    if best_feature is None or best_distance is None or best_distance > tolerance:
+    if (
+        best_feature is None
+        or best_distance is None
+        or best_distance > tolerance
+    ):
         return None
 
     best_path = None
@@ -1008,8 +1185,12 @@ def _profile_trace_from_layer(layer, profile_line, map_settings):
         return None
 
     map_path = _transform_points(best_path, layer_crs, source_crs)
-    start_measure, _, _ = _locate_point_on_polyline(map_path, profile_map_points[0])
-    end_measure, _, _ = _locate_point_on_polyline(map_path, profile_map_points[1])
+    start_measure, _, _ = _locate_point_on_polyline(
+        map_path, profile_map_points[0]
+    )
+    end_measure, _, _ = _locate_point_on_polyline(
+        map_path, profile_map_points[1]
+    )
     trimmed_path = _substring_polyline(map_path, start_measure, end_measure)
     if len(trimmed_path) < 2:
         trimmed_path = map_path
@@ -1025,7 +1206,9 @@ def _feature_title(layer, feature, settings, lang):
     mode = settings.get("topo_profile_title_mode", "field")
     if mode == "single":
         title = settings.get("topo_profile_single_title", "").strip()
-        return title or _text(lang, "Profilo topografico", "Topographic profile")
+        return title or _text(
+            lang, "Profilo topografico", "Topographic profile"
+        )
 
     title_map = settings.get("topo_profile_title_map", {}) or {}
     mapped_title = title_map.get(str(int(feature.id()))) if feature else None
@@ -1056,7 +1239,9 @@ def _feature_title(layer, feature, settings, lang):
 def _profile_titles_for_trace(layer, trace, settings, lang):
     if trace and trace.get("feature"):
         return [_feature_title(layer, trace.get("feature"), settings, lang)]
-    titles = [title for title in settings.get("topo_profile_titles", []) if title]
+    titles = [
+        title for title in settings.get("topo_profile_titles", []) if title
+    ]
     if titles:
         return [titles[0]]
     return [_text(lang, "Profilo topografico", "Topographic profile")]
@@ -1066,14 +1251,20 @@ def prepare_topographic_profile_request(layer, rect, map_settings, settings):
     lang = settings.get("language", "it")
     profile_rect = settings.get("topo_profile_rect") or rect
     profile_line = settings.get("topo_profile_line")
-    profile_trace = _profile_trace_from_layer(layer, profile_line, map_settings)
-    profile_titles = _profile_titles_for_trace(layer, profile_trace, settings, lang)
+    profile_trace = _profile_trace_from_layer(
+        layer, profile_line, map_settings
+    )
+    profile_titles = _profile_titles_for_trace(
+        layer, profile_trace, settings, lang
+    )
     return {
         "rect": profile_rect,
         "map_settings": _map_crs_from_settings(map_settings),
         "titles": profile_titles,
         "profile_line": profile_line,
-        "profile_points": profile_trace.get("points") if profile_trace else None,
+        "profile_points": (
+            profile_trace.get("points") if profile_trace else None
+        ),
         "language": lang,
         "source": settings.get("topo_profile_source", "online"),
         "raster_layer_id": settings.get("topo_profile_raster_id", ""),
@@ -1081,20 +1272,30 @@ def prepare_topographic_profile_request(layer, rect, map_settings, settings):
 
 
 def _map_units_per_meter(map_item):
-    crs = map_item.crs() if map_item.crs().isValid() else QgsProject.instance().crs()
+    crs = (
+        map_item.crs()
+        if map_item.crs().isValid()
+        else QgsProject.instance().crs()
+    )
     map_units = crs.mapUnits()
 
     if map_units == QgsUnitTypes.DistanceDegrees:
-        center_lat = (map_item.extent().yMinimum() + map_item.extent().yMaximum()) / 2.0
+        center_lat = (
+            map_item.extent().yMinimum() + map_item.extent().yMaximum()
+        ) / 2.0
         center_lat = min(max(center_lat, -89.9), 89.9)
-        meters_per_degree = 111320.0 * max(math.cos(math.radians(center_lat)), 0.001)
+        meters_per_degree = 111320.0 * max(
+            math.cos(math.radians(center_lat)), 0.001
+        )
         return 1.0 / meters_per_degree, map_units
 
     if map_units == QgsUnitTypes.DistanceUnknownUnit:
         return None, map_units
 
     try:
-        units_per_meter = QgsUnitTypes.fromUnitToUnitFactor(QgsUnitTypes.DistanceMeters, map_units)
+        units_per_meter = QgsUnitTypes.fromUnitToUnitFactor(
+            QgsUnitTypes.DistanceMeters, map_units
+        )
         if units_per_meter > 0:
             return units_per_meter, map_units
     except Exception:
@@ -1152,14 +1353,18 @@ def _configure_scalebar(scalebar, map_item, small_font, target_width_mm):
 
 
 def _add_north_arrow(layout, map_item, x, y, size, font_size):
-    north_asset = os.path.join(os.path.dirname(__file__), "assets", "north_arrow.svg")
+    north_asset = os.path.join(
+        os.path.dirname(__file__), "assets", "north_arrow.svg"
+    )
     if os.path.exists(north_asset):
         arrow = QgsLayoutItemPicture(layout)
         arrow.setPicturePath(north_asset)
         arrow.setResizeMode(QgsLayoutItemPicture.Zoom)
         arrow.setLinkedMap(map_item)
         arrow.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
-        arrow.attemptResize(QgsLayoutSize(size, size, QgsUnitTypes.LayoutMillimeters))
+        arrow.attemptResize(
+            QgsLayoutSize(size, size, QgsUnitTypes.LayoutMillimeters)
+        )
         layout.addLayoutItem(arrow)
     else:
         _add_label(
@@ -1177,7 +1382,9 @@ def _add_north_arrow(layout, map_item, x, y, size, font_size):
         )
 
 
-def _add_map_decorations(layout, map_item, metrics, map_x, map_y, map_h, lang="it"):
+def _add_map_decorations(
+    layout, map_item, metrics, map_x, map_y, map_h, lang="it"
+):
     # Freccia nord in alto a sinistra della mappa (stile tecnico).
     arrow_x = map_x + 4.0
     arrow_y = map_y + 4.0
@@ -1191,11 +1398,15 @@ def _add_map_decorations(layout, map_item, metrics, map_x, map_y, map_h, lang="i
         QColor(17, 24, 39),
         0.2,
     )
-    _add_north_arrow(layout, map_item, arrow_x, arrow_y, metrics["north"], metrics["small"])
+    _add_north_arrow(
+        layout, map_item, arrow_x, arrow_y, metrics["north"], metrics["small"]
+    )
 
     # Barra di scala in basso a sinistra della mappa.
     scalebar = QgsLayoutItemScaleBar(layout)
-    _configure_scalebar(scalebar, map_item, metrics["small"], metrics["scale_w"])
+    _configure_scalebar(
+        scalebar, map_item, metrics["small"], metrics["scale_w"]
+    )
     try:
         map_scale_value = map_item.scale()
     except Exception:
@@ -1242,7 +1453,13 @@ def _add_map_decorations(layout, map_item, metrics, map_x, map_y, map_h, lang="i
             QgsUnitTypes.LayoutMillimeters,
         )
     )
-    scalebar.attemptResize(QgsLayoutSize(metrics["scale_w"], metrics["scale_h"], QgsUnitTypes.LayoutMillimeters))
+    scalebar.attemptResize(
+        QgsLayoutSize(
+            metrics["scale_w"],
+            metrics["scale_h"],
+            QgsUnitTypes.LayoutMillimeters,
+        )
+    )
     layout.addLayoutItem(scalebar)
 
 
@@ -1260,8 +1477,14 @@ def _combined_layers_extent(map_settings, target_crs):
             if not extent or extent.isEmpty() or not extent.isFinite():
                 continue
             layer_crs = layer.crs()
-            if layer_crs.isValid() and target_crs.isValid() and layer_crs != target_crs:
-                transform = QgsCoordinateTransform(layer_crs, target_crs, QgsProject.instance())
+            if (
+                layer_crs.isValid()
+                and target_crs.isValid()
+                and layer_crs != target_crs
+            ):
+                transform = QgsCoordinateTransform(
+                    layer_crs, target_crs, QgsProject.instance()
+                )
                 extent = transform.transformBoundingBox(extent)
             if combined is None:
                 combined = extent
@@ -1278,8 +1501,14 @@ def _transformed_layer_extent(layer, target_crs):
         if not extent or extent.isEmpty() or not extent.isFinite():
             return None
         layer_crs = layer.crs()
-        if layer_crs.isValid() and target_crs.isValid() and layer_crs != target_crs:
-            transform = QgsCoordinateTransform(layer_crs, target_crs, QgsProject.instance())
+        if (
+            layer_crs.isValid()
+            and target_crs.isValid()
+            and layer_crs != target_crs
+        ):
+            transform = QgsCoordinateTransform(
+                layer_crs, target_crs, QgsProject.instance()
+            )
             return transform.transformBoundingBox(extent)
         return extent
     except Exception:
@@ -1292,8 +1521,14 @@ def _crs_area_extent(crs, target_crs):
         if not bounds or bounds.isEmpty() or not bounds.isFinite():
             return None
         source_crs = QgsCoordinateReferenceSystem("EPSG:4326")
-        if source_crs.isValid() and target_crs.isValid() and source_crs != target_crs:
-            transform = QgsCoordinateTransform(source_crs, target_crs, QgsProject.instance())
+        if (
+            source_crs.isValid()
+            and target_crs.isValid()
+            and source_crs != target_crs
+        ):
+            transform = QgsCoordinateTransform(
+                source_crs, target_crs, QgsProject.instance()
+            )
             return transform.transformBoundingBox(bounds)
         return bounds
     except Exception:
@@ -1307,12 +1542,14 @@ def _extent_ratio(candidate, reference):
 
 
 def _extent_contains(candidate, reference):
-    return all((
-        candidate.xMinimum() <= reference.xMinimum(),
-        candidate.xMaximum() >= reference.xMaximum(),
-        candidate.yMinimum() <= reference.yMinimum(),
-        candidate.yMaximum() >= reference.yMaximum(),
-    ))
+    return all(
+        (
+            candidate.xMinimum() <= reference.xMinimum(),
+            candidate.xMaximum() >= reference.xMaximum(),
+            candidate.yMinimum() <= reference.yMinimum(),
+            candidate.yMaximum() >= reference.yMaximum(),
+        )
+    )
 
 
 def _fit_extent_to_aspect(extent, aspect):
@@ -1327,10 +1564,17 @@ def _fit_extent_to_aspect(extent, aspect):
         width = height * aspect
     else:
         height = width / aspect
-    return QgsRectangle(cx - (width / 2.0), cy - (height / 2.0), cx + (width / 2.0), cy + (height / 2.0))
+    return QgsRectangle(
+        cx - (width / 2.0),
+        cy - (height / 2.0),
+        cx + (width / 2.0),
+        cy + (height / 2.0),
+    )
 
 
-def _overview_context_extent(source_extent, layer, map_settings, target_crs, target_aspect=1.0):
+def _overview_context_extent(
+    source_extent, layer, map_settings, target_crs, target_aspect=1.0
+):
     candidates = []
 
     layer_extent = _transformed_layer_extent(layer, target_crs)
@@ -1362,13 +1606,30 @@ def _overview_context_extent(source_extent, layer, map_settings, target_crs, tar
         return _fit_extent_to_aspect(valid[0][1], target_aspect)
 
     buffer_distance = max(source_extent.width(), source_extent.height()) * 3.0
-    return _fit_extent_to_aspect(_buffered_rect(source_extent, buffer_distance), target_aspect)
+    return _fit_extent_to_aspect(
+        _buffered_rect(source_extent, buffer_distance), target_aspect
+    )
 
 
-def _build_overview_map(layout, map_item, source_extent, x, y, w, h, crs, map_settings, context_extent=None):
+def _build_overview_map(
+    layout,
+    map_item,
+    source_extent,
+    x,
+    y,
+    w,
+    h,
+    crs,
+    map_settings,
+    context_extent=None,
+):
     overview_map = QgsLayoutItemMap(layout)
-    overview_map.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
-    overview_map.attemptResize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters))
+    overview_map.attemptMove(
+        QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters)
+    )
+    overview_map.attemptResize(
+        QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters)
+    )
     overview_map.setCrs(crs)
 
     if map_settings:
@@ -1381,16 +1642,28 @@ def _build_overview_map(layout, map_item, source_extent, x, y, w, h, crs, map_se
             pass
 
     overview_extent = context_extent
-    overview_missing = not overview_extent or overview_extent.isEmpty() or not overview_extent.isFinite()
+    overview_missing = (
+        not overview_extent
+        or overview_extent.isEmpty()
+        or not overview_extent.isFinite()
+    )
     overview_too_small = False
     if not overview_missing:
-        overview_too_small = all((
-            overview_extent.width() < source_extent.width() * 2.0,
-            overview_extent.height() < source_extent.height() * 2.0,
-        ))
+        overview_too_small = all(
+            (
+                overview_extent.width() < source_extent.width() * 2.0,
+                overview_extent.height() < source_extent.height() * 2.0,
+            )
+        )
     if overview_missing or overview_too_small:
-        buffer_distance = max(source_extent.width(), source_extent.height()) * 2.5
-        overview_extent = _buffered_rect(source_extent, buffer_distance) if buffer_distance > 0 else source_extent
+        buffer_distance = (
+            max(source_extent.width(), source_extent.height()) * 2.5
+        )
+        overview_extent = (
+            _buffered_rect(source_extent, buffer_distance)
+            if buffer_distance > 0
+            else source_extent
+        )
 
     overview_map.setExtent(overview_extent)
     _set_item_frame(overview_map, 0.3, QColor(17, 24, 39))
@@ -1403,7 +1676,11 @@ def _build_overview_map(layout, map_item, source_extent, x, y, w, h, crs, map_se
     overview = QgsLayoutItemMapOverview("Overview", overview_map)
     overview.setLinkedMap(map_item)
     frame_symbol = QgsFillSymbol.createSimple(
-        {"color": "0,0,0,0", "outline_color": "220,38,38,255", "outline_width": "0.45"}
+        {
+            "color": "0,0,0,0",
+            "outline_color": "220,38,38,255",
+            "outline_width": "0.45",
+        }
     )
     overview.setFrameSymbol(frame_symbol)
     overview_map.overviews().addOverview(overview)
@@ -1411,11 +1688,31 @@ def _build_overview_map(layout, map_item, source_extent, x, y, w, h, crs, map_se
 
 
 def _add_overview_section(
-    layout, map_item, extent, x, y, w, h, crs, map_settings, lang, font_size, context_extent=None
+    layout,
+    map_item,
+    extent,
+    x,
+    y,
+    w,
+    h,
+    crs,
+    map_settings,
+    lang,
+    font_size,
+    context_extent=None,
 ):  # noqa: E501
     if w <= 18.0 or h <= 18.0:
         return None
-    inner = _add_section_frame(layout, _text(lang, "INQUADRAMENTO", "OVERVIEW"), x, y, w, h, font_size, lang)
+    inner = _add_section_frame(
+        layout,
+        _text(lang, "INQUADRAMENTO", "OVERVIEW"),
+        x,
+        y,
+        w,
+        h,
+        font_size,
+        lang,
+    )
     if not inner:
         return None
     inner_x, inner_y, inner_w, inner_h = inner
@@ -1440,10 +1737,14 @@ def _style_legend(legend, font_size, lang="it"):
     except AttributeError:
         pass
     try:
-        legend.setStyleFont(legend.Title, QFont("Arial", font_size, QFont.Bold))
+        legend.setStyleFont(
+            legend.Title, QFont("Arial", font_size, QFont.Bold)
+        )
         legend.setStyleFont(legend.Group, QFont("Arial", max(font_size, 8)))
         legend.setStyleFont(legend.Subgroup, QFont("Arial", max(font_size, 8)))
-        legend.setStyleFont(legend.SymbolLabel, QFont("Arial", max(font_size, 8)))
+        legend.setStyleFont(
+            legend.SymbolLabel, QFont("Arial", max(font_size, 8))
+        )
     except Exception:
         pass
     for setter, value in (
@@ -1481,8 +1782,15 @@ def _add_logo(layout, logo_path, x, y, w, h):
     layout.addLayoutItem(logo)
 
 
-def _add_image_section(layout, title, image_path, x, y, w, h, font_size, lang="it"):
-    if not image_path or not os.path.exists(image_path) or w <= 18.0 or h <= 16.0:
+def _add_image_section(
+    layout, title, image_path, x, y, w, h, font_size, lang="it"
+):
+    if (
+        not image_path
+        or not os.path.exists(image_path)
+        or w <= 18.0
+        or h <= 16.0
+    ):
         return None
     inner = _add_section_frame(layout, title, x, y, w, h, font_size, lang)
     if not inner:
@@ -1495,7 +1803,9 @@ def _add_image_section(layout, title, image_path, x, y, w, h, font_size, lang="i
 def _add_legend_section(layout, map_item, x, y, w, h, font_size, lang="it"):
     if w <= 18.0 or h <= 18.0:
         return None
-    inner = _add_section_frame(layout, _text(lang, "LEGENDA", "LEGEND"), x, y, w, h, font_size, lang)
+    inner = _add_section_frame(
+        layout, _text(lang, "LEGENDA", "LEGEND"), x, y, w, h, font_size, lang
+    )
     if not inner:
         return None
     inner_x, inner_y, inner_w, inner_h = inner
@@ -1504,13 +1814,19 @@ def _add_legend_section(layout, map_item, x, y, w, h, font_size, lang="it"):
     legend.setLegendFilterByMapEnabled(True)
     legend.setAutoUpdateModel(True)
     _style_legend(legend, max(font_size, 7), lang)
-    legend.attemptMove(QgsLayoutPoint(inner_x, inner_y, QgsUnitTypes.LayoutMillimeters))
-    legend.attemptResize(QgsLayoutSize(inner_w, inner_h, QgsUnitTypes.LayoutMillimeters))
+    legend.attemptMove(
+        QgsLayoutPoint(inner_x, inner_y, QgsUnitTypes.LayoutMillimeters)
+    )
+    legend.attemptResize(
+        QgsLayoutSize(inner_w, inner_h, QgsUnitTypes.LayoutMillimeters)
+    )
     layout.addLayoutItem(legend)
     return legend
 
 
-def _add_attribute_section(layout, layer, features, x, y, w, h, font_size, lang="it"):
+def _add_attribute_section(
+    layout, layer, features, x, y, w, h, font_size, lang="it"
+):
     if not features or w <= 18.0 or h <= 18.0:
         return False
     inner = _add_section_frame(
@@ -1550,7 +1866,9 @@ def _layout_page_count(layout):
 
 def _append_layout_page(layout, page_w, page_h):
     page = QgsLayoutItemPage(layout)
-    page.setPageSize(QgsLayoutSize(page_w, page_h, QgsUnitTypes.LayoutMillimeters))
+    page.setPageSize(
+        QgsLayoutSize(page_w, page_h, QgsUnitTypes.LayoutMillimeters)
+    )
     layout.pageCollection().addPage(page)
     return _layout_page_count(layout) - 1
 
@@ -1574,9 +1892,13 @@ def _page_origin(layout, page_index):
         return 0.0, 0.0
 
 
-def _page_rect(layout, page_index, x, y, w, h, fill_color, border_color, border_mm=0.2):
+def _page_rect(
+    layout, page_index, x, y, w, h, fill_color, border_color, border_mm=0.2
+):
     ox, oy = _page_origin(layout, page_index)
-    return _add_rectangle(layout, ox + x, oy + y, w, h, fill_color, border_color, border_mm)
+    return _add_rectangle(
+        layout, ox + x, oy + y, w, h, fill_color, border_color, border_mm
+    )
 
 
 def _page_label(
@@ -1594,7 +1916,19 @@ def _page_label(
     valign=Qt.AlignVCenter,
 ):
     ox, oy = _page_origin(layout, page_index)
-    return _add_label(layout, text, ox + x, oy + y, w, h, font_size, bold, color, halign, valign)
+    return _add_label(
+        layout,
+        text,
+        ox + x,
+        oy + y,
+        w,
+        h,
+        font_size,
+        bold,
+        color,
+        halign,
+        valign,
+    )
 
 
 def _page_fitted_label(
@@ -1613,7 +1947,20 @@ def _page_fitted_label(
     min_size=7,
 ):
     ox, oy = _page_origin(layout, page_index)
-    return _add_fitted_label(layout, text, ox + x, oy + y, w, h, font_size, bold, color, halign, valign, min_size)
+    return _add_fitted_label(
+        layout,
+        text,
+        ox + x,
+        oy + y,
+        w,
+        h,
+        font_size,
+        bold,
+        color,
+        halign,
+        valign,
+        min_size,
+    )
 
 
 def _page_picture(layout, page_index, image_path, x, y, w, h):
@@ -1623,15 +1970,27 @@ def _page_picture(layout, page_index, image_path, x, y, w, h):
     picture = QgsLayoutItemPicture(layout)
     picture.setPicturePath(image_path)
     picture.setResizeMode(QgsLayoutItemPicture.Zoom)
-    picture.attemptMove(QgsLayoutPoint(ox + x, oy + y, QgsUnitTypes.LayoutMillimeters))
+    picture.attemptMove(
+        QgsLayoutPoint(ox + x, oy + y, QgsUnitTypes.LayoutMillimeters)
+    )
     picture.attemptResize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutMillimeters))
     layout.addLayoutItem(picture)
     return picture
 
 
-def _add_report_page_header(layout, page_index, page_w, page_h, title, subtitle=None):
+def _add_report_page_header(
+    layout, page_index, page_w, page_h, title, subtitle=None
+):
     _page_rect(
-        layout, page_index, 8.0, 8.0, page_w - 16.0, page_h - 16.0, QColor(255, 255, 255), QColor(17, 24, 39), 0.25
+        layout,
+        page_index,
+        8.0,
+        8.0,
+        page_w - 16.0,
+        page_h - 16.0,
+        QColor(255, 255, 255),
+        QColor(17, 24, 39),
+        0.25,
     )
     large_page = page_w >= 400.0
     title_size = 15 if large_page else 13
@@ -1671,7 +2030,17 @@ def _add_report_page_header(layout, page_index, page_w, page_h, title, subtitle=
             Qt.AlignVCenter,
             min_size=8,
         )
-    _page_rect(layout, page_index, 12.0, rule_y, page_w - 24.0, 0.25, QColor(17, 24, 39), QColor(17, 24, 39), 0.0)
+    _page_rect(
+        layout,
+        page_index,
+        12.0,
+        rule_y,
+        page_w - 24.0,
+        0.25,
+        QColor(17, 24, 39),
+        QColor(17, 24, 39),
+        0.0,
+    )
 
 
 def _build_horizontal_panel(
@@ -1695,7 +2064,16 @@ def _build_horizontal_panel(
     selection_features=None,
 ):
     ink = QColor(17, 24, 39)
-    _add_rectangle(layout, panel_x, panel_y, panel_w, panel_h, QColor(255, 255, 255), ink, 0.28)
+    _add_rectangle(
+        layout,
+        panel_x,
+        panel_y,
+        panel_w,
+        panel_h,
+        QColor(255, 255, 255),
+        ink,
+        0.28,
+    )
 
     pad = 2.0
     logo_path = settings.get("logo", "")
@@ -1713,12 +2091,37 @@ def _build_horizontal_panel(
 
     cursor_x = panel_x
     if has_logo and logo_w > 12.0:
-        _add_rectangle(layout, cursor_x, panel_y, logo_w, panel_h, QColor(255, 255, 255), ink, 0.16)
-        _add_logo(layout, logo_path, cursor_x + pad, panel_y + pad, logo_w - (2 * pad), panel_h - (2 * pad))
+        _add_rectangle(
+            layout,
+            cursor_x,
+            panel_y,
+            logo_w,
+            panel_h,
+            QColor(255, 255, 255),
+            ink,
+            0.16,
+        )
+        _add_logo(
+            layout,
+            logo_path,
+            cursor_x + pad,
+            panel_y + pad,
+            logo_w - (2 * pad),
+            panel_h - (2 * pad),
+        )
         cursor_x += logo_w
 
     info_x = cursor_x
-    _add_rectangle(layout, info_x, panel_y, info_w, panel_h, QColor(255, 255, 255), ink, 0.16)
+    _add_rectangle(
+        layout,
+        info_x,
+        panel_y,
+        info_w,
+        panel_h,
+        QColor(255, 255, 255),
+        ink,
+        0.16,
+    )
     title_text = settings.get("title", "TAVOLA CARTOGRAFICA").upper()
     title_h = min(max(metrics["title"] * 1.18, 14.0), panel_h * 0.28)
     _add_fitted_label(
@@ -1735,11 +2138,29 @@ def _build_horizontal_panel(
         Qt.AlignVCenter,
         min_size=max(metrics["meta"], 9),
     )
-    _add_rectangle(layout, info_x, panel_y + title_h + 2.0, info_w, 0.14, QColor(17, 24, 39), QColor(17, 24, 39), 0.0)
+    _add_rectangle(
+        layout,
+        info_x,
+        panel_y + title_h + 2.0,
+        info_w,
+        0.14,
+        QColor(17, 24, 39),
+        QColor(17, 24, 39),
+        0.0,
+    )
 
     scale_h = min(max(metrics["meta"] * 1.40, 10.0), panel_h * 0.18)
     scale_y = panel_y + title_h + 3.4
-    _add_scale_indicator(layout, info_x + pad, scale_y, info_w - (2 * pad), scale_h, scale_value, metrics["meta"], lang)
+    _add_scale_indicator(
+        layout,
+        info_x + pad,
+        scale_y,
+        info_w - (2 * pad),
+        scale_h,
+        scale_value,
+        metrics["meta"],
+        lang,
+    )
     meta_y = scale_y + scale_h + 1.6
     _add_key_value_table(
         layout,
@@ -1775,7 +2196,11 @@ def _build_horizontal_panel(
     content_gap = 1.4
 
     attr_complete = False
-    if settings.get("export_attributes", False) and selection_features and content_inner_h > 34.0:
+    if (
+        settings.get("export_attributes", False)
+        and selection_features
+        and content_inner_h > 34.0
+    ):
         attr_h = min(max(content_inner_h * 0.36, 20.0), content_inner_h * 0.50)
         attr_complete = _add_attribute_section(
             layout,
@@ -1794,7 +2219,11 @@ def _build_horizontal_panel(
     if attr_complete:
         settings["_attributes_in_titleblock"] = True
 
-    if chart_image_path and os.path.exists(chart_image_path) and content_inner_h > 18.0:
+    if (
+        chart_image_path
+        and os.path.exists(chart_image_path)
+        and content_inner_h > 18.0
+    ):
         _add_image_section(
             layout,
             _text(lang, "DASHBOARD", "DASHBOARD"),
@@ -1840,7 +2269,16 @@ def _build_vertical_panel(
     selection_features=None,
 ):
     ink = QColor(17, 24, 39)
-    _add_rectangle(layout, panel_x, panel_y, panel_w, panel_h, QColor(255, 255, 255), ink, 0.28)
+    _add_rectangle(
+        layout,
+        panel_x,
+        panel_y,
+        panel_w,
+        panel_h,
+        QColor(255, 255, 255),
+        ink,
+        0.28,
+    )
 
     pad = 2.4
     cursor_y = panel_y + pad
@@ -1850,13 +2288,38 @@ def _build_vertical_panel(
 
     if logo_path and os.path.exists(logo_path):
         logo_h = min(max(panel_h * 0.10, 18.0), panel_w * 0.32)
-        _add_rectangle(layout, panel_x + pad, cursor_y, content_w, logo_h, QColor(255, 255, 255), ink, 0.14)
-        _add_logo(layout, logo_path, panel_x + (2 * pad), cursor_y + pad, content_w - (2 * pad), logo_h - (2 * pad))
+        _add_rectangle(
+            layout,
+            panel_x + pad,
+            cursor_y,
+            content_w,
+            logo_h,
+            QColor(255, 255, 255),
+            ink,
+            0.14,
+        )
+        _add_logo(
+            layout,
+            logo_path,
+            panel_x + (2 * pad),
+            cursor_y + pad,
+            content_w - (2 * pad),
+            logo_h - (2 * pad),
+        )
         cursor_y += logo_h + gap
 
     title_text = settings.get("title", "TAVOLA CARTOGRAFICA").upper()
     title_h = min(max(metrics["title"] * 1.24, 15.0), panel_h * 0.12)
-    _add_rectangle(layout, panel_x + pad, cursor_y, content_w, title_h, QColor(248, 250, 252), ink, 0.14)
+    _add_rectangle(
+        layout,
+        panel_x + pad,
+        cursor_y,
+        content_w,
+        title_h,
+        QColor(248, 250, 252),
+        ink,
+        0.14,
+    )
     _add_fitted_label(
         layout,
         title_text,
@@ -1874,7 +2337,16 @@ def _build_vertical_panel(
     cursor_y += title_h + gap
 
     scale_h = min(max(metrics["meta"] * 1.35, 10.0), panel_h * 0.075)
-    _add_scale_indicator(layout, panel_x + pad, cursor_y, content_w, scale_h, scale_value, metrics["meta"], lang)
+    _add_scale_indicator(
+        layout,
+        panel_x + pad,
+        cursor_y,
+        content_w,
+        scale_h,
+        scale_value,
+        metrics["meta"],
+        lang,
+    )
     cursor_y += scale_h + gap
 
     meta_h = min(max(metrics["meta"] * 5.4, 38.0), panel_h * 0.23)
@@ -1890,7 +2362,10 @@ def _build_vertical_panel(
     )
     if meta_inner:
         _add_key_value_table(
-            layout, _metadata_rows(layer.name(), crs_authid, extent, lang), *meta_inner, max(metrics.get("small", 8), 7)
+            layout,
+            _metadata_rows(layer.name(), crs_authid, extent, lang),
+            *meta_inner,
+            max(metrics.get("small", 8), 7),
         )
     cursor_y += meta_h + gap
 
@@ -1915,7 +2390,11 @@ def _build_vertical_panel(
 
     remaining_h = panel_y + panel_h - cursor_y - pad
     attr_complete = False
-    if settings.get("export_attributes", False) and selection_features and remaining_h > 42.0:
+    if (
+        settings.get("export_attributes", False)
+        and selection_features
+        and remaining_h > 42.0
+    ):
         attr_h = min(max(remaining_h * 0.34, 24.0), remaining_h * 0.48)
         attr_complete = _add_attribute_section(
             layout,
@@ -1934,7 +2413,11 @@ def _build_vertical_panel(
     if attr_complete:
         settings["_attributes_in_titleblock"] = True
 
-    if chart_image_path and os.path.exists(chart_image_path) and remaining_h > 22.0:
+    if (
+        chart_image_path
+        and os.path.exists(chart_image_path)
+        and remaining_h > 22.0
+    ):
         _add_image_section(
             layout,
             _text(lang, "DASHBOARD", "DASHBOARD"),
@@ -1973,12 +2456,18 @@ def _attribute_filter_expression(layer, rect, map_settings, features=None):
     return f"intersects($geometry, geom_from_wkt('{wkt_polygon}'))"
 
 
-def _add_attributes_page_to_layout(layout, layer, rect, map_settings, features, lang="it"):
+def _add_attributes_page_to_layout(
+    layout, layer, rect, map_settings, features, lang="it"
+):
     if layer.type() != QgsMapLayerType.VectorLayer:
         return
 
     row_count = len(features)
-    field_names = [field.name() for field in layer.fields() if field.name().lower() != "geometry"]
+    field_names = [
+        field.name()
+        for field in layer.fields()
+        if field.name().lower() != "geometry"
+    ]
     page_w = 420.0
     page_h = 297.0
     page_index = _append_layout_page(layout, page_w, page_h)
@@ -1988,7 +2477,8 @@ def _add_attributes_page_to_layout(layout, layer, rect, map_settings, features, 
         page_index,
         page_w,
         page_h,
-        f"{_text(lang, 'TABELLA ATTRIBUTI', 'ATTRIBUTE TABLE')} - {layer.name()}",
+        f"{_text(lang, 'TABELLA ATTRIBUTI', 'ATTRIBUTE TABLE')} - "
+        f"{layer.name()}",
         _text(
             lang,
             f"Record filtrati sull'area Shift+Draw: {row_count}",
@@ -2002,8 +2492,10 @@ def _add_attributes_page_to_layout(layout, layer, rect, map_settings, features, 
             page_index,
             _text(
                 lang,
-                "Nessuna geometria del layer attivo interseca l'area selezionata.",
-                "No feature from the active layer intersects the selected area.",
+                "Nessuna geometria del layer attivo interseca l'area "
+                "selezionata.",
+                "No feature from the active layer intersects the selected "
+                "area.",
             ),
             12.0,
             42.0,
@@ -2026,7 +2518,9 @@ def _add_attributes_page_to_layout(layout, layer, rect, map_settings, features, 
     if field_names:
         table.setDisplayedFields(field_names, True)
     table.setFilterFeatures(True)
-    table.setFeatureFilter(_attribute_filter_expression(layer, rect, map_settings, features))
+    table.setFeatureFilter(
+        _attribute_filter_expression(layer, rect, map_settings, features)
+    )
     table.setMaximumNumberOfFeatures(max(row_count, 1))
     try:
         table.setResizeMode(QgsLayoutMultiFrame.RepeatUntilFinished)
@@ -2054,8 +2548,14 @@ def _add_attributes_page_to_layout(layout, layer, rect, map_settings, features, 
     ox, oy = _page_origin(layout, page_index)
     frame = QgsLayoutFrame(layout, table)
     frame.setFrameEnabled(True)
-    frame.attemptMove(QgsLayoutPoint(ox + 12.0, oy + 40.0, QgsUnitTypes.LayoutMillimeters))
-    frame.attemptResize(QgsLayoutSize(page_w - 24.0, page_h - 54.0, QgsUnitTypes.LayoutMillimeters))
+    frame.attemptMove(
+        QgsLayoutPoint(ox + 12.0, oy + 40.0, QgsUnitTypes.LayoutMillimeters)
+    )
+    frame.attemptResize(
+        QgsLayoutSize(
+            page_w - 24.0, page_h - 54.0, QgsUnitTypes.LayoutMillimeters
+        )
+    )
     layout.addLayoutItem(frame)
     table.addFrame(frame)
     table.refresh()
@@ -2075,19 +2575,31 @@ def _add_dashboard_pages_to_layout(layout, dashboard_images, lang="it"):
             "percent": _text(lang, "PERCENTUALI", "PERCENTAGES"),
         }.get(raw_type, raw_type.upper())
         page_index = _append_layout_page(layout, page_w, page_h)
+        dashboard_title = _text(
+            lang, "DASHBOARD CARTOGRAFICO", "CARTOGRAPHIC DASHBOARD"
+        )
         _add_report_page_header(
             layout,
             page_index,
             page_w,
             page_h,
-            f"{_text(lang, 'DASHBOARD CARTOGRAFICO', 'CARTOGRAPHIC DASHBOARD')} - {chart_type}",
+            f"{dashboard_title} - {chart_type}",
             _text(
                 lang,
-                f"Grafico {index} generato sui soli elementi dell'area selezionata.",
+                f"Grafico {index} generato sui soli elementi dell'area "
+                f"selezionata.",
                 f"Chart {index} generated only from selected-area features.",
             ),
         )
-        _page_picture(layout, page_index, image_path, 12.0, 38.0, page_w - 24.0, page_h - 50.0)
+        _page_picture(
+            layout,
+            page_index,
+            image_path,
+            12.0,
+            38.0,
+            page_w - 24.0,
+            page_h - 50.0,
+        )
 
 
 def _profile_source_summary(profile, lang):
@@ -2108,8 +2620,10 @@ def _profile_source_summary(profile, lang):
         )
     return _text(
         lang,
-        f"Fonte quote: OpenTopoData; dataset {DATASET_STACK}; interpolazione {OPEN_TOPO_DATA_METHOD}.",
-        f"Elevation source: OpenTopoData; datasets {DATASET_STACK}; {OPEN_TOPO_DATA_METHOD} interpolation.",
+        f"Fonte quote: OpenTopoData; dataset {DATASET_STACK}; interpolazione "
+        f"{OPEN_TOPO_DATA_METHOD}.",
+        f"Elevation source: OpenTopoData; datasets {DATASET_STACK}; "
+        f"{OPEN_TOPO_DATA_METHOD} interpolation.",
     )
 
 
@@ -2127,7 +2641,11 @@ def _add_topographic_profile_pages_to_layout(layout, profiles, lang="it"):
                 page_index,
                 page_w,
                 page_h,
-                _text(lang, "PROFILO TOPOGRAFICO NON GENERATO", "TOPOGRAPHIC PROFILE NOT GENERATED"),
+                _text(
+                    lang,
+                    "PROFILO TOPOGRAFICO NON GENERATO",
+                    "TOPOGRAPHIC PROFILE NOT GENERATED",
+                ),
                 title,
             )
             _page_fitted_label(
@@ -2151,7 +2669,8 @@ def _add_topographic_profile_pages_to_layout(layout, profiles, lang="it"):
                 _text(
                     lang,
                     "Per evitare i limiti del servizio online, usare la sorgente 'Genera Profilo da progetto' con un raster DTM/DEM locale.",  # noqa: E501
-                    "To avoid online service limits, use 'Generate Profile from project' with a local DTM/DEM raster.",
+                    "To avoid online service limits, use 'Generate Profile "
+                    "from project' with a local DTM/DEM raster.",
                 ),
                 18.0,
                 88.0,
@@ -2176,7 +2695,15 @@ def _add_topographic_profile_pages_to_layout(layout, profiles, lang="it"):
             _text(lang, "PROFILO TOPOGRAFICO", "TOPOGRAPHIC PROFILE"),
             f"{title} - {_profile_source_summary(profile, lang)}",
         )
-        _page_picture(layout, page_index, image_path, 12.0, 40.0, page_w - 24.0, page_h - 52.0)
+        _page_picture(
+            layout,
+            page_index,
+            image_path,
+            12.0,
+            40.0,
+            page_w - 24.0,
+            page_h - 52.0,
+        )
 
 
 def build_and_export_layout(layer, rect, map_settings, settings):
@@ -2197,13 +2724,19 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         metrics = get_layout_metrics(fmt, page_w, page_h)
 
         page = layout.pageCollection().page(0)
-        page.setPageSize(QgsLayoutSize(page_w, page_h, QgsUnitTypes.LayoutMillimeters))
+        page.setPageSize(
+            QgsLayoutSize(page_w, page_h, QgsUnitTypes.LayoutMillimeters)
+        )
         layout.setName(f"Q-Press_{datetime.now().strftime('%Y%m%d%H%M%S')}")
 
         output_dir = settings.get("output_dir")
         if not output_dir:
             raise Exception(
-                _text(settings.get("language", "it"), "Directory di output non valida.", "Invalid output directory.")
+                _text(
+                    settings.get("language", "it"),
+                    "Directory di output non valida.",
+                    "Invalid output directory.",
+                )
             )
         os.makedirs(output_dir, exist_ok=True)
         asset_dir = tempfile.mkdtemp(prefix="qpress_assets_")
@@ -2213,10 +2746,14 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         margin = metrics["margin"]
         gap = metrics["gap"]
         cartiglio_pos = settings.get("cartiglio_pos", "Laterale Destro")
-        is_horizontal = cartiglio_pos == "bottom" or "Inferiore" in str(cartiglio_pos)
+        is_horizontal = cartiglio_pos == "bottom" or "Inferiore" in str(
+            cartiglio_pos
+        )
 
         if is_horizontal:
-            panel_h = min(metrics.get("panel_bottom", metrics["panel"]), page_h * 0.32)
+            panel_h = min(
+                metrics.get("panel_bottom", metrics["panel"]), page_h * 0.32
+            )
             map_x = margin
             map_y = margin
             map_w = page_w - (2 * margin)
@@ -2234,12 +2771,19 @@ def build_and_export_layout(layer, rect, map_settings, settings):
             panel_y = margin
             panel_h = map_h
 
-        if map_w <= 20.0 or map_h <= 20.0 or panel_w <= 20.0 or panel_h <= 20.0:
+        if (
+            map_w <= 20.0
+            or map_h <= 20.0
+            or panel_w <= 20.0
+            or panel_h <= 20.0
+        ):
             raise Exception(
                 _text(
                     lang,
-                    "Geometria layout non valida: spazio insufficiente per mappa e cartiglio.",
-                    "Invalid layout geometry: insufficient space for map and title block.",
+                    "Geometria layout non valida: spazio insufficiente per "
+                    "mappa e cartiglio.",
+                    "Invalid layout geometry: insufficient space for map and "
+                    "title block.",
                 )
             )
 
@@ -2258,9 +2802,15 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         extent = _resolve_extent(layer, rect)
 
         map_item = QgsLayoutItemMap(layout)
-        map_item.attemptMove(QgsLayoutPoint(map_x, map_y, QgsUnitTypes.LayoutMillimeters))
-        map_item.attemptResize(QgsLayoutSize(map_w, map_h, QgsUnitTypes.LayoutMillimeters))
-        _configure_map_item(layout, map_item, extent, map_settings, project.crs())
+        map_item.attemptMove(
+            QgsLayoutPoint(map_x, map_y, QgsUnitTypes.LayoutMillimeters)
+        )
+        map_item.attemptResize(
+            QgsLayoutSize(map_w, map_h, QgsUnitTypes.LayoutMillimeters)
+        )
+        _configure_map_item(
+            layout, map_item, extent, map_settings, project.crs()
+        )
         if _apply_manual_map_scale(map_item, settings):
             extent = map_item.extent()
         _add_rectangle(
@@ -2276,15 +2826,23 @@ def build_and_export_layout(layer, rect, map_settings, settings):
 
         interval = calculate_grid_interval(extent)
         _configure_primary_grid(map_item, interval, metrics["small"])
-        _configure_secondary_grid(map_item, project.crs().authid(), interval, metrics["small"])
-        _add_map_decorations(layout, map_item, metrics, map_x, map_y, map_h, lang)
+        _configure_secondary_grid(
+            map_item, project.crs().authid(), interval, metrics["small"]
+        )
+        _add_map_decorations(
+            layout, map_item, metrics, map_x, map_y, map_h, lang
+        )
 
         selection_features = (
-            _features_in_selection(layer, rect, map_settings) if layer.type() == QgsMapLayerType.VectorLayer else []
+            _features_in_selection(layer, rect, map_settings)
+            if layer.type() == QgsMapLayerType.VectorLayer
+            else []
         )
         dashboard_images = []
         chart_thumbnail = None
-        dashboard_placement = settings.get("dashboard_placement", "Nel cartiglio (se possibile)")
+        dashboard_placement = settings.get(
+            "dashboard_placement", "Nel cartiglio (se possibile)"
+        )
         dashboard_in_titleblock = dashboard_placement in (
             "titleblock",
             "both",
@@ -2298,11 +2856,13 @@ def build_and_export_layout(layer, rect, map_settings, settings):
             "Cartiglio + Stampe successive",
         )
 
-        dashboard_enabled = all((
-            settings.get("dashboard_enabled", False),
-            layer.type() == QgsMapLayerType.VectorLayer,
-            settings.get("dashboard_category_field", ""),
-        ))
+        dashboard_enabled = all(
+            (
+                settings.get("dashboard_enabled", False),
+                layer.type() == QgsMapLayerType.VectorLayer,
+                settings.get("dashboard_category_field", ""),
+            )
+        )
         if dashboard_enabled:
             dashboard_images = build_dashboard_images(
                 layer_name=layer.name(),
@@ -2314,24 +2874,37 @@ def build_and_export_layout(layer, rect, map_settings, settings):
                 value_field=settings.get("dashboard_value_field", ""),
                 include_pie=settings.get("dashboard_include_pie", True),
                 include_bar=settings.get("dashboard_include_bar", True),
-                include_percent=settings.get("dashboard_include_percent", True),
+                include_percent=settings.get(
+                    "dashboard_include_percent", True
+                ),
                 output_dir=asset_dir,
                 chart_title=settings.get(
-                    "dashboard_title", _text(lang, "Dashboard cartografico", "Cartographic dashboard")
+                    "dashboard_title",
+                    _text(
+                        lang,
+                        "Dashboard cartografico",
+                        "Cartographic dashboard",
+                    ),
                 ),
                 chart_subtitle=settings.get("dashboard_subtitle", ""),
                 aggregation=settings.get("dashboard_aggregation", "Somma"),
                 show_labels=settings.get("dashboard_show_labels", True),
-                show_percentages=settings.get("dashboard_show_percentages", True),
+                show_percentages=settings.get(
+                    "dashboard_show_percentages", True
+                ),
                 top_n=settings.get("dashboard_top_n", 10),
-                sort_order=settings.get("dashboard_sort_order", "Valore decrescente"),
+                sort_order=settings.get(
+                    "dashboard_sort_order", "Valore decrescente"
+                ),
                 language=lang,
             )
             if dashboard_images and dashboard_in_titleblock:
                 chart_thumbnail = dashboard_images[0]["path"]
 
         scale_value = map_item.scale() if map_item.scale() > 0 else 0
-        overview_context = _overview_context_extent(extent, layer, map_settings, project.crs(), 1.35)
+        overview_context = _overview_context_extent(
+            extent, layer, map_settings, project.crs(), 1.35
+        )
         if is_horizontal:
             _build_horizontal_panel(
                 layout,
@@ -2375,8 +2948,12 @@ def build_and_export_layout(layer, rect, map_settings, settings):
                 selection_features=selection_features,
             )
 
-        if settings.get("export_attributes", False) and not settings.get("_attributes_in_titleblock", False):
-            _add_attributes_page_to_layout(layout, layer, rect, map_settings, selection_features, lang)
+        if settings.get("export_attributes", False) and not settings.get(
+            "_attributes_in_titleblock", False
+        ):
+            _add_attributes_page_to_layout(
+                layout, layer, rect, map_settings, selection_features, lang
+            )
 
         safe_name = safe_filename(layer.name())
         if dashboard_images and dashboard_in_pages:
@@ -2384,7 +2961,9 @@ def build_and_export_layout(layer, rect, map_settings, settings):
         if settings.get("topo_profile", False):
             profiles = settings.get("topo_profile_prebuilt")
             if profiles is None:
-                profile_request = prepare_topographic_profile_request(layer, rect, map_settings, settings)
+                profile_request = prepare_topographic_profile_request(
+                    layer, rect, map_settings, settings
+                )
                 profiles = build_topographic_profile_images(
                     profile_request["rect"],
                     profile_request["map_settings"],
@@ -2397,13 +2976,17 @@ def build_and_export_layout(layer, rect, map_settings, settings):
                     raster_layer_id=profile_request["raster_layer_id"],
                 )
             if profiles:
-                _add_topographic_profile_pages_to_layout(layout, profiles, lang)
+                _add_topographic_profile_pages_to_layout(
+                    layout, profiles, lang
+                )
             else:
                 QgsMessageLog.logMessage(
                     _text(
                         lang,
-                        "Profilo topografico non generato: dati altimetrici non disponibili.",
-                        "Topographic profile not generated: elevation data unavailable.",
+                        "Profilo topografico non generato: dati altimetrici "
+                        "non disponibili.",
+                        "Topographic profile not generated: elevation data "
+                        "unavailable.",
                     ),
                     "Q-Press",
                     _qgis_message_level("Warning"),
