@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Q-Press icon">
+  <rect x="16" y="16" width="224" height="224" rx="28" fill="#0f172a"/>
+  <rect x="42" y="42" width="172" height="172" rx="12" fill="#ffffff"/>
+  <rect x="56" y="56" width="144" height="144" fill="#f8fafc" stroke="#0f172a" stroke-width="4"/>
+  <path d="M56 104H200M56 152H200M104 56V200M152 56V200" stroke="#cbd5e1" stroke-width="3"/>
+  <circle cx="128" cy="128" r="36" fill="none" stroke="#1d4ed8" stroke-width="9"/>
+  <path d="M128 90V166M90 128H166" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round"/>
+  <path d="M174 174l34 34" stroke="#1d4ed8" stroke-width="14" stroke-linecap="round"/>
+  <rect x="86" y="186" width="84" height="18" fill="#0f172a"/>
+  <rect x="86" y="186" width="21" height="18" fill="#ffffff"/>
+  <rect x="107" y="186" width="21" height="18" fill="#0f172a"/>
+  <rect x="128" y="186" width="21" height="18" fill="#ffffff"/>
+  <rect x="149" y="186" width="21" height="18" fill="#0f172a"/>
+</svg>

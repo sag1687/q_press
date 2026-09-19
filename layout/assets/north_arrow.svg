@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <style type="text/css">
+      .outline { fill: #ffffff; stroke: #0f172a; stroke-width: 4; stroke-linejoin: round; }
+      .core { fill: #0f172a; }
+      .letter { fill: #0f172a; font-family: Arial, sans-serif; font-size: 28px; font-weight: 700; }
+    </style>
+  </defs>
+  <polygon class="outline" points="60,8 98,102 60,82 22,102"/>
+  <polygon class="core" points="60,20 87,88 60,74 33,88"/>
+  <text class="letter" x="60" y="115" text-anchor="middle">N</text>
+</svg>

@@ -1,0 +1,30 @@
+[general]
+name=Q-Press
+qgisMinimumVersion=3.16
+qgisMaximumVersion=4.99
+description=IT: Genera PDF cartografici professionali dall'area selezionata sul canvas con Shift+trascina: scala, griglie, legenda, tabelle e profilo topografico. / EN: Generate professional cartographic PDFs from the canvas area selected with Shift+drag: scale, grids, legend, tables and topographic profile.
+about=Q-Press allows you to select an area directly from the QGIS canvas using Shift+Drag and instantly generate a professional cartographic PDF. The output includes a technical title block, automatic or manual scale, custom paper size, coordinate grids, legend, overview map, filtered attribute tables, statistical dashboards, and a single-line topographic profile from OpenTopoData or a project DTM/DEM raster.
+version=2.1.2
+author=Dott. Sarino Alfonso Grande
+email=sino.grande@gmail.com
+tracker=https://github.com/sag1687/q_press/issues
+repository=https://github.com/sag1687/q_press
+homepage=https://sinocloud.it
+changelog=2.1.2 - IT: Superato il QT6 Check dello store: tutti gli enum Qt e QGIS sono ora in forma pienamente scoped nel sorgente (es. Qgis.MessageLevel.Warning, QgsWkbTypes.GeometryType.PointGeometry), verificati uno a uno sull'ambiente reale QGIS 4.2/Qt 6.10 con test di caricamento automatico. / EN: Store QT6 Check satisfied: every Qt and QGIS enum is now fully scoped in the source (e.g. Qgis.MessageLevel.Warning, QgsWkbTypes.GeometryType.PointGeometry), each one verified on a real QGIS 4.2/Qt 6.10 environment with an automated load test.
+    2.1.1 - IT: Azzerate tutte le segnalazioni dell'analizzatore di sicurezza dello store (eccezioni intenzionali annotate, default dei parametri credenziali resi espliciti): la scansione Bandit ora risulta pulita come richiesto per la pubblicazione. / EN: Cleared every finding of the store security analyzer (intentional exception handlers annotated, credential parameter defaults made explicit): the Bandit scan is now clean as required for publication.
+    2.1.0 - IT: Compatibilita' Qt6/QGIS 4 verificata integralmente sull'ambiente reale (QGIS 4.2, Qt 6.10): eliminati tutti gli enum in forma non-scoped, test automatico di caricamento superato; rimosso il flag supportsQt6 (non piu' riconosciuto da QGIS); nuova descrizione breve bilingue. / EN: Qt6/QGIS 4 compatibility fully verified on a real environment (QGIS 4.2, Qt 6.10): removed every non-scoped enum, automated load test passed; dropped the supportsQt6 flag (no longer recognised by QGIS); new short bilingual description.
+    Version 2.0.4: Full security and Qt6 compatibility audit (network calls with timeout and https scheme whitelist, secure temp dirs, Qt5/Qt6 enum shims verified in every module); added the official supportsQt6 flag so QGIS Qt6 builds accept the plugin. / Audit completo di sicurezza e compatibilità Qt6 (chiamate di rete con timeout e whitelist schema https, directory temporanee sicure, shim enum Qt5/Qt6 verificati in ogni modulo); aggiunto il flag ufficiale supportsQt6 per le build QGIS Qt6.
+Version 2.0.3: Fixed E501 (line too long, PEP8) across settings_dialog.py, layout_builder.py, chart_generator.py, topographic_profile.py, attribute_handler.py, map_tool.py and q_press_plugin.py. / Corretto E501 (righe troppo lunghe, PEP8) in settings_dialog.py, layout_builder.py, chart_generator.py, topographic_profile.py, attribute_handler.py, map_tool.py e q_press_plugin.py.
+Version 2.0.2: Fixed W503 (line break before binary operator) in plugin_hub.py; removed hidden .qgis_plugin_version file that the publish pipeline was mistakenly bundling into the package. / Corretto W503 (line break before binary operator) in plugin_hub.py; rimosso file nascosto .qgis_plugin_version generato erroneamente dentro il pacchetto dalla pipeline di pubblicazione.
+Version 2.0.1: Removed unused legacy files not referenced by the code (dev test scripts, other plugins' logos). / File residui non utilizzati dal codice rimossi (script di test di sviluppo, loghi di altri plugin).
+Version 2.0.0: New shared SinoCloud slate-blue dark theme (same as SARIAG and STAC Browser), language selector with Italian/English flags, Info tab drop-down with the author's other plugins and GitHub links, homepage updated to sinocloud.it, development files removed from the package, bilingual README updated. / Nuovo tema scuro slate-blue condiviso della famiglia SinoCloud (lo stesso di SARIAG e STAC Browser), selettore lingua con bandiere Italiano/Inglese, menù a tendina nella scheda Info con gli altri plugin dell'autore e link GitHub, homepage aggiornata a sinocloud.it, file di sviluppo rimossi dal pacchetto, README bilingue aggiornato.
+Version 1.9.2: Fixed QGIS 4 message bar compatibility by using Qgis.MessageLevel values and positional pushMessage arguments.
+Version 1.9.1: Added window resize arrow controls and scrollable configuration content for smaller QGIS workspaces.
+Version 1.9.0: Added QGIS 4/Qt6 compatibility shims, manual map scale, custom paper size and Help tab.
+Version 1.8.2: Fixed Bandit security warning and PEP8 line break issues.
+Version 1.8.1: Resolved security, PEP8 and hidden file warnings.
+Version 1.8.0: Fixed security vulnerability in online elevation requests and cleaned up build artifacts.
+category=Vector
+tags=pdf,layout,print,cartography,map,atlas,dashboard,charts,attributes,topography,elevation,profile,qgis
+icon=resources/qpress_icon.svg
+experimental=False
