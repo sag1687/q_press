@@ -4,6 +4,7 @@
 
 [![Version](https://img.shields.io/badge/Version-2.1.2-1e6fb8?style=for-the-badge)]()
 [![QGIS](https://img.shields.io/badge/QGIS-%E2%89%A5%203.16-589632?style=for-the-badge&logo=qgis&logoColor=white)]()
+[![Ultimo Aggiornamento](https://img.shields.io/badge/Ultimo_Aggiornamento-13/07/2026-ff69b4?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-GPL--2.0-bd0000?style=for-the-badge)]()
 
 **IT: Genera PDF cartografici professionali dall'area selezionata sul canvas con Shift+trascina: scala, griglie, legenda, tabelle e profilo topografico. / EN: Generate professional cartographic PDFs from the canvas area selected with Shift+drag: scale, grids, legend, tables and topographic profile.**
